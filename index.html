@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Podium</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d0d0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Podium">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0d0d0d;--card:#1a1a1a;--card2:#222;--border:#2e2e2e;
+  --primary:#E8FF00;--accent:#FF6B00;--danger:#FF3B3B;--success:#00D084;
+  --text:#FFFFFF;--text2:#999;--text3:#555;
+  --radius:12px;--nav-h:60px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.5;overscroll-behavior:none}
+#app{min-height:100vh;display:flex;flex-direction:column}
+h1{font-size:1.6rem;font-weight:800;letter-spacing:-0.5px}
+h2{font-size:1.2rem;font-weight:700}
+h3{font-size:1rem;font-weight:600}
+p{color:var(--text2)}
+small{font-size:.8rem;color:var(--text2)}
+.page{flex:1;overflow-y:auto;padding:16px 16px calc(var(--nav-h) + 16px)}
+.page-title{margin-bottom:20px}
+.page-title h1{color:var(--text)}
+.page-title p{margin-top:4px;font-size:.9rem}
+.section{margin-bottom:24px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-header h2{font-size:1rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:1px solid var(--border)}
+.card-row{display:flex;align-items:center;gap:12px}
+.card-actions{display:flex;gap:8px;margin-top:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 20px;border-radius:var(--radius);border:none;font-size:.95rem;font-weight:600;cursor:pointer;transition:opacity .15s;text-decoration:none;white-space:nowrap}
+.btn:active{opacity:.75}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--primary);color:#000}
+.btn-secondary{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-sm{padding:8px 14px;font-size:.85rem;border-radius:8px}
+.btn-full{width:100%}
+.btn-icon{padding:10px;border-radius:8px}
+.form-group{margin-bottom:16px}
+label{display:block;font-size:.85rem;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
+input,select,textarea{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-size:1rem;outline:none;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--primary)}
+textarea{resize:vertical;min-height:80px}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.input-error{border-color:var(--danger) !important}
+.error-msg{color:var(--danger);font-size:.8rem;margin-top:4px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--card);border-top:1px solid var(--border);display:flex;z-index:100}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--text3);font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px;transition:color .15s;border:none;background:none}
+.nav-item.active{color:var(--primary)}
+.nav-item svg{width:22px;height:22px}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 0;margin-bottom:4px}
+.top-bar h1{font-size:1.4rem}
+.tag{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.tag-yellow{background:rgba(232,255,0,.15);color:var(--primary)}
+.tag-orange{background:rgba(255,107,0,.15);color:var(--accent)}
+.tag-green{background:rgba(0,208,132,.15);color:var(--success)}
+.tag-red{background:rgba(255,59,59,.15);color:var(--danger)}
+.tag-gray{background:var(--card2);color:var(--text2)}
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:var(--primary);transition:width .3s}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:border-color .15s}
+.stat-card[onclick]:active{border-color:var(--primary);opacity:.8}
+.stat-card .val{font-size:1.8rem;font-weight:800;color:var(--primary)}
+.stat-card .lbl{font-size:.8rem;color:var(--text2);margin-top:2px}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--primary);color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.95rem;flex-shrink:0}
+.avatar-lg{width:56px;height:56px;font-size:1.2rem}
+.rpe-scale{display:flex;gap:6px;flex-wrap:wrap}
+.rpe-btn{width:44px;height:44px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-weight:700;font-size:.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.rpe-btn.selected{border-color:var(--primary);background:rgba(232,255,0,.15);color:var(--primary)}
+.workout-day{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer}
+.workout-day.completed{border-color:var(--success);opacity:.8}
+.workout-day.today{border-color:var(--primary)}
+.workout-day .day-header{display:flex;align-items:center;justify-content:space-between}
+.workout-day .day-type{font-size:.75rem;color:var(--text2);margin-top:2px}
+.check-circle{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check-circle.done{background:var(--success);border-color:var(--success)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:var(--card);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px}
+.loading{display:flex;align-items:center;justify-content:center;height:200px;color:var(--text2)}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.alert{padding:12px 16px;border-radius:8px;font-size:.9rem;margin-bottom:16px}
+.alert-success{background:rgba(0,208,132,.1);color:var(--success);border:1px solid rgba(0,208,132,.2)}
+.alert-error{background:rgba(255,59,59,.1);color:var(--danger);border:1px solid rgba(255,59,59,.2)}
+.alert-info{background:rgba(232,255,0,.05);color:var(--text2);border:1px solid rgba(232,255,0,.15)}
+.week-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;scrollbar-width:none}
+.week-tabs::-webkit-scrollbar{display:none}
+.week-tab{flex-shrink:0;padding:8px 14px;border-radius:20px;font-size:.85rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card2);color:var(--text2)}
+.week-tab.active{background:var(--primary);color:#000;border-color:var(--primary)}
+.countdown{background:linear-gradient(135deg,rgba(232,255,0,.1),rgba(255,107,0,.05));border:1px solid rgba(232,255,0,.2);border-radius:var(--radius);padding:20px;text-align:center}
+.countdown .days{font-size:3rem;font-weight:800;color:var(--primary);line-height:1}
+.countdown .label{font-size:.85rem;color:var(--text2);margin-top:4px}
+.login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.login-logo{font-size:2.4rem;font-weight:900;letter-spacing:-2px;margin-bottom:8px}
+.login-logo span{color:var(--primary)}
+.login-card{width:100%;max-width:380px;background:var(--card);border-radius:var(--radius);padding:28px;border:1px solid var(--border);margin-top:32px}
+.home-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:0}
+.home-wordmark{font-size:4rem;font-weight:900;letter-spacing:-3px;line-height:1;margin-bottom:16px}
+.home-wordmark span{color:var(--primary)}
+.home-tagline{font-size:1.05rem;color:var(--text2);margin-bottom:48px;line-height:1.5}
+.home-cta{width:100%;max-width:280px}
+.tabs{display:flex;background:var(--card2);border-radius:10px;padding:3px;margin-bottom:20px}
+.tab{flex:1;padding:8px;border-radius:8px;text-align:center;font-size:.85rem;font-weight:600;cursor:pointer;color:var(--text2)}
+.tab.active{background:var(--card);color:var(--text)}
+.empty{text-align:center;padding:48px 16px}
+.empty-icon{font-size:3rem;margin-bottom:12px}
+.empty h3{color:var(--text);margin-bottom:6px}
+.icon{display:inline-block;vertical-align:middle}
+.search-input{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:11px 14px 11px 38px;color:var(--text);font-size:.95rem;outline:none}
+.search-input:focus{border-color:var(--primary)}
+.search-wrap{position:relative;margin-bottom:14px}
+.search-wrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
+.lib-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer}
+.lib-item:active{border-color:var(--primary)}
+.lib-item .li-name{font-weight:600;font-size:.9rem}
+.lib-item .li-detail{font-size:.78rem;color:var(--text2)}
+.adj-badge{background:rgba(255,107,0,.15);border:1px solid rgba(255,107,0,.3);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px}
+.adj-badge .adj-label{color:var(--accent);font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.toast{position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--success);color:#000;font-weight:700;font-size:.9rem;padding:12px 20px;border-radius:100px;z-index:500;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.error{background:var(--danger);color:#fff}
+.phase-header{background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px}
+.phase-header h3{color:var(--primary)}
+.hamburger{display:flex;flex-direction:column;gap:5px;cursor:pointer;padding:10px;border:none;background:none;border-radius:8px}
+.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .2s}
+.hamburger:active{opacity:.6}
+.ham-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5)}
+.ham-menu{position:absolute;top:54px;right:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);min-width:220px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.ham-header{padding:16px;border-bottom:1px solid var(--border);background:var(--card2)}
+.ham-header .name{font-weight:700;font-size:1rem}
+.ham-header .role{font-size:.78rem;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+.ham-item{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;border:none;background:none;width:100%;text-align:left;color:var(--text);font-size:.95rem;font-weight:500;border-bottom:1px solid var(--border)}
+.ham-item:last-child{border-bottom:none}
+.ham-item:active{background:var(--card2)}
+.ham-item svg{width:18px;height:18px;color:var(--text2);flex-shrink:0}
+.ham-item.danger{color:var(--danger)}
+.ham-item.danger svg{color:var(--danger)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ============================================================
+// SUPABASE
+// ============================================================
+const SUPABASE_URL = 'https://wbxvjimgrmnqcwdqfhbr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieHZqaW1ncm1ucWN3ZHFmaGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODMwMTUsImV4cCI6MjA5NzE1OTAxNX0.IWdg6MRzTEX4AN_Yw6bx5HSB6-EeRXKYbqDrs0EA2sQ';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ============================================================
+// APP
+// ============================================================
+const ROOT_VIEWS = new Set(['login','setup_profile','coach_dashboard','athlete_today']);
+
+const APP = {
+  user: null,      // supabase auth user
+  profile: null,   // profiles row (name, role)
+  view: null,
+  params: {},
+  history: [],
+  state: {},       // data for current view, populated by LOADERS
+
+  async init() {
+    // Render home immediately so there's no blank screen while auth resolves
+    this.view = 'home';
+    document.getElementById('app').innerHTML = VIEWS.home();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    }
+    // onAuthStateChange drives all routing
+    sb.auth.onAuthStateChange(async (event, session) => {
+      if (APP.view === 'setup_profile') return; // don't interrupt setup
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+        await APP._handleSession(session);
+      } else if (event === 'SIGNED_OUT') {
+        APP.user = null; APP.profile = null; APP.state = {}; APP.history = [];
+        await APP._nav('home', {}, false);
+      }
+    });
+  },
+
+  async _handleSession(session) {
+    if (!session) { await this._nav('home', {}, false); return; }
+    this.user = session.user;
+    const {data: prof} = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+    if (!prof) { await this._nav('setup_profile', {}, false); return; }
+    this.profile = prof;
+    const dest = prof.role === 'coach' ? 'coach_dashboard' : 'athlete_today';
+    if (this.view !== dest) await this._nav(dest, {}, false);
+  },
+
+  async _nav(view, params={}, pushHist=true) {
+    if (pushHist && this.view && this.view !== view && !ROOT_VIEWS.has(view)) {
+      this.history.push({view: this.view, params: {...this.params}});
+    }
+    this.view = view;
+    this.params = params;
+    this.state = {};
+    document.getElementById('app').innerHTML = '<div class="loading">Loading…</div>';
+    if (LOADERS[view]) {
+      try { await LOADERS[view](params); }
+      catch(err) {
+        console.error(err);
+        document.getElementById('app').innerHTML = `<div class="page" style="padding-top:40px"><div class="empty"><div class="empty-icon">⚠️</div><h3>Something went wrong</h3><p>${err.message||'Could not load page.'}</p><button class="btn btn-ghost" style="margin-top:16px" onclick="APP._nav('${view}',${JSON.stringify(params)},false)">Retry</button></div></div>`;
+        return;
+      }
+    }
+    this.render();
+    window.scrollTo(0,0);
+  },
+
+  async go(view, params={}) { await this._nav(view, params, true); },
+  async tab(view, params={}) { this.history=[]; await this._nav(view, params, false); },
+  async back() {
+    if (this.history.length > 0) {
+      const prev = this.history.pop();
+      await this._nav(prev.view, prev.params, false);
+    }
+  },
+
+  render() {
+    const fn = VIEWS[this.view];
+    document.getElementById('app').innerHTML = fn ? fn() : '<div class="loading">View not found</div>';
+  },
+
+  openModal(html) {
+    const el = document.createElement('div');
+    el.id = 'modal-root'; el.className = 'modal-overlay';
+    el.innerHTML = `<div class="modal"><div class="modal-handle"></div>${html}</div>`;
+    el.onclick = e => { if(e.target===el) APP.closeModal(); };
+    document.body.appendChild(el);
+  },
+  closeModal() { document.getElementById('modal-root')?.remove(); },
+
+  async logout() { await sb.auth.signOut(); },
+
+  getAthleteWeek(asgn) {
+    if(!asgn) return 1;
+    const start = new Date(asgn.start_date);
+    const diff = Math.floor((new Date() - start)/(1000*60*60*24*7));
+    return Math.min(Math.max(diff+1,1), asgn.plan_templates?.length_weeks||20);
+  },
+  getTodayDayIndex() {
+    const map={1:1,2:2,3:3,4:4,5:4,6:5,0:null};
+    return map[new Date().getDay()];
+  },
+};
+
+// ============================================================
+// ICONS
+// ============================================================
+const I = {
+  home:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  plan:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+  chart:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>`,
+  check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>`,
+  notes:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+  users:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>`,
+  plus:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  back:`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>`,
+  ok:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>`,
+  logout:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
+  feedback:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>`,
+  edit:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  person:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  library:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>`,
+  swap:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>`,
+  flag:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`,
+  race:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  baseline:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-3 3"/></svg>`,
+  bell:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>`,
+  mail:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
+  search:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+  trash:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>`,
+};
+
+// ============================================================
+// COMPONENTS
+// ============================================================
+function coachNav(active){
+  const items=[{id:'coach_dashboard',icon:I.home,label:'Home'},{id:'coach_athletes',icon:I.users,label:'Athletes'},{id:'coach_plans',icon:I.plan,label:'Plans'},{id:'coach_feedback',icon:I.feedback,label:'Feedback'}];
+  return `<nav class="bottom-nav">${items.map(it=>`<button class="nav-item ${active===it.id?'active':''}" onclick="APP.tab('${it.id}')">${it.icon}<span>${it.label}</span></button>`).join('')}</nav>`;
+}
+function athleteNav(active){
+  const items=[{id:'athlete_today',icon:I.home,label:'Today'},{id:'athlete_plan',icon:I.plan,label:'Plan'},{id:'athlete_progress',icon:I.chart,label:'Progress'},{id:'athlete_checkin',icon:I.check,label:'Check-in'},{id:'athlete_notes',icon:I.notes,label:'Notes'}];
+  return `<nav class="bottom-nav">${items.map(it=>`<button class="nav-item ${active===it.id?'active':''}" onclick="APP.tab('${it.id}')">${it.icon}<span>${it.label}</span></button>`).join('')}</nav>`;
+}
+function backBtn(){return APP.history.length>0?`<button class="btn btn-ghost btn-sm btn-icon" onclick="APP.back()">${I.back}</button>`:`<div style="width:40px"></div>`;}
+function breadcrumbs(){return '';}
+function hamburgerBtn(){
+  return `<div style="position:relative">
+    <button class="hamburger" onclick="openHamburger()" id="ham-btn"><span></span><span></span><span></span></button>
+  </div>`;
+}
+function openHamburger(){
+  if(document.getElementById('ham-overlay')) return;
+  const prof = APP.profile;
+  const overlay = document.createElement('div');
+  overlay.id='ham-overlay'; overlay.className='ham-overlay';
+  overlay.onclick=()=>overlay.remove();
+  const menu = document.createElement('div');
+  menu.className='ham-menu';
+  menu.style.position='fixed'; menu.style.top='54px'; menu.style.right='16px';
+  menu.innerHTML=`
+    <div class="ham-header"><div class="name">${prof?.name||'User'}</div><div class="role">${prof?.role||''}</div></div>
+    ${prof?.role==='coach'?`
+    <button class="ham-item" onclick="overlay.remove();APP.go('coach_profile')">${I.person}<span>My Profile</span></button>
+    <button class="ham-item" onclick="overlay.remove();APP.go('coach_library')">${I.library}<span>Workout Library</span></button>
+    `:`
+    <button class="ham-item" onclick="overlay.remove();APP.go('athlete_profile')">${I.person}<span>My Profile</span></button>
+    <button class="ham-item" onclick="overlay.remove();APP.go('athlete_race_info')">${I.race}<span>Race Info</span></button>
+    <button class="ham-item" onclick="overlay.remove();APP.go('athlete_baseline')">${I.baseline}<span>My Baseline</span></button>
+    `}
+    <button class="ham-item danger" onclick="overlay.remove();APP.logout()">${I.logout}<span>Sign out</span></button>
+  `;
+  document.body.appendChild(overlay);
+  document.body.appendChild(menu);
+  overlay.onclick=()=>{overlay.remove();menu.remove();};
+}
+function avatarLetters(name){return (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+function phaseForWeek(week){
+  const phases=[{name:'Foundation',weeks:[1,2,3,4],color:'#4A9EFF'},{name:'Base Build',weeks:[5,6,7,8],color:'#FF9500'},{name:'Integration',weeks:[9,10,11,12,13],color:'#FF6B00'},{name:'Race-Specific',weeks:[14,15,16,17],color:'#FF3B3B'},{name:'Peak & Taper',weeks:[18,19,20],color:'#E8FF00'}];
+  return phases.find(p=>p.weeks.includes(week))||{name:'Training',color:'#999'};
+}
+function typeColor(type){const map={'Run':'tag-yellow','Strength':'tag-orange','HYROX Sim':'tag-red','Long Run':'tag-green','Recovery':'tag-gray','Rest':'tag-gray','HYROX Skills':'tag-orange','Skills':'tag-orange','Half HYROX Sim':'tag-red'};return map[type]||'tag-gray';}
+function raceCountdown(dateStr){
+  if(!dateStr) return '';
+  const days = Math.ceil((new Date(dateStr)-new Date())/(1000*60*60*24));
+  if(days<0) return '';
+  return `<div class="countdown"><div class="days">${days}</div><div class="label">days to race · ${new Date(dateStr).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})}</div></div>`;
+}
+function showToast(msg,isError=false){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t);}
+  t.textContent=msg;t.className='toast'+(isError?' error':'');
+  requestAnimationFrame(()=>{t.classList.add('show');});
+  clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+function selectScale(inputId,val,scaleId){
+  document.getElementById(inputId).value=val;
+  document.querySelectorAll(`#${scaleId} .rpe-btn`).forEach(b=>b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+}
+function selectCompletion(yes){
+  document.getElementById('log-completed').value=yes?'true':'false';
+  document.getElementById('comp-yes').classList.toggle('btn-primary',yes);
+  document.getElementById('comp-yes').classList.toggle('btn-secondary',!yes);
+  document.getElementById('comp-no').classList.toggle('btn-primary',!yes);
+  document.getElementById('comp-no').classList.toggle('btn-secondary',yes);
+}
+
+// ============================================================
+// LOADERS  (async — populate APP.state before render)
+// ============================================================
+const LOADERS = {
+  async coach_dashboard() {
+    const [athRes, tplRes] = await Promise.all([
+      sb.from('profiles').select('*, athlete_profiles(*), assignments(id, start_date, template_id, plan_templates(name, length_weeks))').eq('role','athlete').order('name'),
+      sb.from('plan_templates').select('id,name').order('name'),
+    ]);
+    APP.state.athletes = athRes.data||[];
+    APP.state.templates = tplRes.data||[];
+    const ids = APP.state.athletes.map(a=>a.id);
+    if(ids.length){
+      const {data:logs} = await sb.from('workout_logs').select('*, profiles!athlete_id(name,id)').in('athlete_id',ids).eq('coach_reviewed',false).order('completed_at',{ascending:false}).limit(30);
+      APP.state.unreviewedLogs = logs||[];
+    } else { APP.state.unreviewedLogs=[]; }
+  },
+
+  async coach_athletes() {
+    const {data} = await sb.from('profiles').select('*, athlete_profiles(*), assignments(id,start_date,plan_templates(name,length_weeks))').eq('role','athlete').order('name');
+    APP.state.athletes = data||[];
+  },
+
+  async coach_invite_athlete() {}, // static form
+
+  async coach_athlete_detail({athleteId}) {
+    const [profRes, asgnRes, logsRes, checkinsRes, notesRes, tplRes] = await Promise.all([
+      sb.from('profiles').select('*, athlete_profiles(*)').eq('id',athleteId).single(),
+      sb.from('assignments').select('*, plan_templates(*)').eq('athlete_id',athleteId).maybeSingle(),
+      sb.from('workout_logs').select('*').eq('athlete_id',athleteId).order('completed_at',{ascending:false}).limit(30),
+      sb.from('checkins').select('*').eq('athlete_id',athleteId).order('date',{ascending:false}).limit(10),
+      sb.from('coach_notes').select('*').eq('athlete_id',athleteId).order('created_at',{ascending:false}),
+      sb.from('plan_templates').select('id,name,length_weeks,format,level').order('name'),
+    ]);
+    APP.state.athlete = profRes.data;
+    APP.state.assignment = asgnRes.data;
+    APP.state.logs = logsRes.data||[];
+    APP.state.checkins = checkinsRes.data||[];
+    APP.state.notes = notesRes.data||[];
+    APP.state.templates = tplRes.data||[];
+    // fetch partner name if exists
+    const pid = profRes.data?.athlete_profiles?.partner_id;
+    if(pid){
+      const {data:p} = await sb.from('profiles').select('id,name,email').eq('id',pid).maybeSingle();
+      APP.state.partner = p;
+    }
+  },
+
+  async coach_plans() {
+    const {data} = await sb.from('plan_templates').select('*, assignments(count)').order('created_at',{ascending:false});
+    APP.state.templates = data||[];
+  },
+
+  async coach_plan_detail({templateId}) {
+    const [tplRes,asgnRes] = await Promise.all([
+      sb.from('plan_templates').select('*').eq('id',templateId).single(),
+      sb.from('assignments').select('*, profiles!athlete_id(name)').eq('template_id',templateId),
+    ]);
+    APP.state.template = tplRes.data;
+    APP.state.assignments = asgnRes.data||[];
+  },
+
+  async coach_edit_plan({templateId,week}) {
+    const [{data:tpl},{data:lib}] = await Promise.all([
+      sb.from('plan_templates').select('*').eq('id',templateId).single(),
+      sb.from('library').select('*').order('name'),
+    ]);
+    APP.state.template = tpl;
+    APP.state.editWeek = parseInt(week)||1;
+    APP.state.library = lib||[];
+  },
+
+  async coach_create_plan() {}, // static form
+
+  async coach_feedback() {
+    const {data:athletes} = await sb.from('profiles').select('id,name').eq('role','athlete');
+    APP.state.athletes = athletes||[];
+    const ids = (athletes||[]).map(a=>a.id);
+    if(!ids.length){ APP.state.logs=[]; APP.state.checkins=[]; return; }
+    const [logRes,ciRes] = await Promise.all([
+      sb.from('workout_logs').select('*, profiles!athlete_id(name,id)').in('athlete_id',ids).order('completed_at',{ascending:false}).limit(60),
+      sb.from('checkins').select('*, profiles!athlete_id(name)').in('athlete_id',ids).order('date',{ascending:false}).limit(30),
+    ]);
+    APP.state.logs = logRes.data||[];
+    APP.state.checkins = ciRes.data||[];
+  },
+
+  async coach_library() {
+    const {data} = await sb.from('library').select('*').order('name');
+    APP.state.library = data||[];
+  },
+
+  async coach_profile() {},
+
+  async athlete_today() {
+    const uid = APP.user.id;
+    const {data:asgn} = await sb.from('assignments').select('*, plan_templates(*)').eq('athlete_id',uid).maybeSingle();
+    APP.state.assignment = asgn;
+    const {data:ap} = await sb.from('athlete_profiles').select('*').eq('id',uid).maybeSingle();
+    APP.state.ap = ap;
+    if(!asgn) return;
+    const week = APP.getAthleteWeek(asgn);
+    const day = APP.getTodayDayIndex();
+    APP.state.currentWeek = week; APP.state.currentDay = day;
+    const workouts = asgn.plan_templates?.workouts||[];
+    const mods = asgn.modifications||[];
+    const todayMod = day ? mods.find(m=>m.week===week&&m.day===day) : null;
+    APP.state.todayWorkout = todayMod||(day ? workouts.find(w=>w.week===week&&w.day===day) : null);
+    APP.state.todayMod = !!todayMod;
+    APP.state.weekWorkouts = workouts.filter(w=>w.week===week);
+    const {data:weekLogs} = await sb.from('workout_logs').select('*').eq('athlete_id',uid).eq('assignment_id',asgn.id).eq('week',week);
+    APP.state.weekLogs = weekLogs||[];
+    APP.state.todayLog = day ? (weekLogs||[]).find(l=>l.day===day)||null : null;
+    // partner
+    if(ap?.partner_id){
+      const [{data:partner},{data:plog}] = await Promise.all([
+        sb.from('profiles').select('id,name').eq('id',ap.partner_id).maybeSingle(),
+        day ? sb.from('workout_logs').select('id,completed').eq('athlete_id',ap.partner_id).eq('week',week).eq('day',day).maybeSingle() : {data:null},
+      ]);
+      APP.state.partner = partner;
+      APP.state.partnerTodayLog = plog;
+    }
+    const {data:notes} = await sb.from('coach_notes').select('*').eq('athlete_id',uid).order('created_at',{ascending:false}).limit(1);
+    APP.state.latestNote = notes?.[0]||null;
+  },
+
+  async athlete_plan() {
+    const uid = APP.user.id;
+    const {data:asgn} = await sb.from('assignments').select('*, plan_templates(*)').eq('athlete_id',uid).maybeSingle();
+    APP.state.assignment = asgn;
+    if(!asgn) return;
+    APP.state.currentWeek = APP.getAthleteWeek(asgn);
+    const {data:logs} = await sb.from('workout_logs').select('week,day,completed').eq('athlete_id',uid).eq('assignment_id',asgn.id);
+    APP.state.logs = logs||[];
+  },
+
+  async athlete_progress() {
+    const uid = APP.user.id;
+    const [{data:logs},{data:checkins}] = await Promise.all([
+      sb.from('workout_logs').select('*').eq('athlete_id',uid).order('completed_at',{ascending:false}),
+      sb.from('checkins').select('*').eq('athlete_id',uid).order('date',{ascending:false}).limit(10),
+    ]);
+    APP.state.logs = logs||[];
+    APP.state.checkins = checkins||[];
+  },
+
+  async athlete_checkin() {
+    const uid = APP.user.id;
+    const today = new Date().toISOString().split('T')[0];
+    const [{data:todayCi},{data:recent}] = await Promise.all([
+      sb.from('checkins').select('*').eq('athlete_id',uid).eq('date',today).maybeSingle(),
+      sb.from('checkins').select('*').eq('athlete_id',uid).order('date',{ascending:false}).limit(7),
+    ]);
+    APP.state.todayCheckin = todayCi;
+    APP.state.recentCheckins = recent||[];
+  },
+
+  async athlete_notes() {
+    const {data} = await sb.from('coach_notes').select('*').eq('athlete_id',APP.user.id).order('created_at',{ascending:false});
+    APP.state.notes = data||[];
+  },
+
+  async athlete_profile() {
+    const {data} = await sb.from('athlete_profiles').select('*').eq('id',APP.user.id).maybeSingle();
+    APP.state.ap = data;
+  },
+
+  async athlete_race_info() {
+    const {data} = await sb.from('athlete_profiles').select('*').eq('id',APP.user.id).maybeSingle();
+    APP.state.ap = data;
+  },
+
+  async athlete_baseline() {
+    const {data} = await sb.from('workout_logs').select('*').eq('athlete_id',APP.user.id);
+    APP.state.logs = data||[];
+  },
+};
+
+// ============================================================
+// VIEWS
+// ============================================================
+const VIEWS = {};
+
+VIEWS.home = ()=>`
+<div class="home-screen">
+  <div class="home-wordmark">Podium<span>.</span></div>
+  <p class="home-tagline">Train smarter.<br>Race stronger.</p>
+  <button class="btn btn-primary home-cta" onclick="APP.go('login')">Sign In</button>
+</div>`;
+
+VIEWS.login = ()=>`
+<div class="login-screen">
+  <div><div class="login-logo">Podium<span>.</span></div><p style="color:var(--text2);font-size:.9rem">Sign in to your account</p></div>
+  <div class="login-card">
+    <p style="margin-bottom:20px;font-size:.9rem;color:var(--text2)">Enter your email and password.</p>
+    <div id="login-err" style="display:none" class="alert alert-error">Incorrect email or password.</div>
+    <form onsubmit="ACTIONS.login(event)">
+      <div class="form-group"><label>Email</label><input id="l-email" type="email" placeholder="you@example.com" required autocomplete="email"></div>
+      <div class="form-group"><label>Password</label><input id="l-pass" type="password" placeholder="••••••••" required autocomplete="current-password"></div>
+      <button type="submit" id="login-btn" class="btn btn-primary btn-full">Sign In</button>
+    </form>
+  </div>
+</div>`;
+
+VIEWS.setup_profile = ()=>`
+<div class="login-screen">
+  <div><div class="login-logo">Podium<span>.</span></div><p style="color:var(--text2)">Welcome! Let's set up your profile.</p></div>
+  <div class="login-card">
+    <h2 style="margin-bottom:4px">Complete your profile</h2>
+    <p style="margin-bottom:20px;font-size:.9rem">This takes about a minute.</p>
+    <form onsubmit="ACTIONS.setupProfile(event)">
+      <div class="form-group"><label>Your name</label><input id="sp-name" type="text" placeholder="First Last" required></div>
+      <div class="form-group"><label>Set a password</label><input id="sp-pass" type="password" placeholder="Min 8 characters" required minlength="8"></div>
+      <div class="form-group"><label>Race date</label><input id="sp-date" type="date" required></div>
+      <div class="form-group"><label>Race format</label><select id="sp-format"><option>Solo</option><option>Doubles</option><option>Relay</option></select></div>
+      <div class="form-group"><label>Experience level</label><select id="sp-level"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select></div>
+      <div class="form-group"><label>Injuries / limitations</label><input id="sp-injuries" placeholder="None, or describe" value="None"></div>
+      <button type="submit" id="sp-btn" class="btn btn-primary btn-full">Complete setup</button>
+    </form>
+  </div>
+</div>`;
+
+VIEWS.coach_dashboard = ()=>{
+  const {athletes,unreviewedLogs} = APP.state;
+  const adjLogs = unreviewedLogs.filter(l=>l.adjustment_requested);
+  const recentLogs = unreviewedLogs.slice(0,5);
+  return `
+<div class="page">
+  <div class="top-bar"><h1>Podium<span style="color:var(--primary)">.</span></h1>${hamburgerBtn()}</div>
+  <div class="section">
+    <div class="section-header"><h2>Athletes</h2><button class="btn btn-ghost btn-sm" onclick="APP.tab('coach_athletes')">${I.plus} Invite</button></div>
+    ${athletes.length===0?`<div class="card"><p>No athletes yet. Use the button above to invite your first athlete.</p></div>`:''}
+    ${athletes.map(a=>{
+      const asgn = a.assignments?.[0];
+      const ap = a.athlete_profiles;
+      const week = asgn ? APP.getAthleteWeek(asgn) : null;
+      return `<div class="card card-row" onclick="APP.go('coach_athlete_detail',{athleteId:'${a.id}'})" style="cursor:pointer">
+        <div class="avatar">${avatarLetters(a.name)}</div>
+        <div style="flex:1">
+          <div style="font-weight:700">${a.name}</div>
+          <div style="font-size:.82rem;color:var(--text2)">${ap?.race_format||'Solo'} · ${ap?.level||'—'}</div>
+          ${asgn?`<div style="font-size:.78rem;color:var(--text2);margin-top:2px">Week ${week} of ${asgn.plan_templates?.length_weeks||20}</div>`:`<div style="font-size:.78rem;color:var(--accent);margin-top:2px">No plan assigned</div>`}
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>`;
+    }).join('')}
+  </div>
+  ${adjLogs.length>0?`
+  <div class="section">
+    <div class="section-header"><h2>Adjustment Requests</h2></div>
+    ${adjLogs.map(l=>`<div class="card" style="border-left:3px solid var(--accent)">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div><div style="font-weight:600">${l.profiles?.name}</div><div style="font-size:.8rem;color:var(--text2)">Wk ${l.week} Day ${l.day}</div></div>
+        <button class="btn btn-accent btn-sm" onclick="APP.go('coach_feedback')">Review</button>
+      </div>
+      ${l.adjustment_note?`<div style="margin-top:8px;font-size:.88rem;color:var(--text2)">${l.adjustment_note}</div>`:''}
+    </div>`).join('')}
+  </div>`:''}
+  ${recentLogs.length>0?`
+  <div class="section">
+    <div class="section-header"><h2>Recent Logs</h2></div>
+    ${recentLogs.map(l=>`<div class="card card-row">
+      <div class="avatar" style="width:32px;height:32px;font-size:.75rem">${avatarLetters(l.profiles?.name||'?')}</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:.9rem">${l.profiles?.name} · Wk ${l.week} D${l.day}</div>
+        <div style="font-size:.78rem;color:var(--text2)">${new Date(l.completed_at).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div>
+      </div>
+      <span class="tag ${l.completed?'tag-green':'tag-red'}">${l.completed?'Done':'Skipped'}</span>
+    </div>`).join('')}
+  </div>`:''}
+</div>
+${coachNav('coach_dashboard')}`;
+};
+
+VIEWS.coach_athletes = ()=>{
+  const {athletes} = APP.state;
+  return `
+<div class="page">
+  <div class="top-bar"><h1>Athletes</h1><div style="display:flex;align-items:center;gap:8px"><button class="btn btn-ghost btn-sm" onclick="APP.go('coach_invite_athlete')">${I.plus} Invite</button>${hamburgerBtn()}</div></div>
+  ${athletes.length===0?`<div class="empty"><div class="empty-icon">👥</div><h3>No athletes yet</h3><p>Invite athletes to get started.</p></div>`:''}
+  ${athletes.map(a=>{
+    const asgn = a.assignments?.[0];
+    const ap = a.athlete_profiles;
+    return `<div class="card card-row" onclick="APP.go('coach_athlete_detail',{athleteId:'${a.id}'})" style="cursor:pointer">
+      <div class="avatar">${avatarLetters(a.name)}</div>
+      <div style="flex:1">
+        <div style="font-weight:700">${a.name}</div>
+        <div style="font-size:.82rem;color:var(--text2)">${a.email}</div>
+        <div style="margin-top:4px;display:flex;gap:4px">
+          ${ap?.race_format?`<span class="tag tag-yellow">${ap.race_format}</span>`:''}
+          ${ap?.level?`<span class="tag tag-gray">${ap.level}</span>`:''}
+          ${asgn?'':'<span class="tag tag-orange">No plan</span>'}
+        </div>
+      </div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>`;
+  }).join('')}
+</div>
+${coachNav('coach_athletes')}`;
+};
+
+VIEWS.coach_invite_athlete = ()=>`
+<div class="page">
+  <div class="top-bar">${backBtn()}<h1 style="font-size:1.1rem">Invite Athlete</h1><div style="width:40px"></div></div>
+  <div class="alert alert-info" style="margin-top:8px">An email invitation will be sent. The athlete clicks the link, sets their password, and completes their profile. Email invites require the app to be deployed — see staging setup.</div>
+  <form onsubmit="ACTIONS.inviteAthlete(event)" style="margin-top:16px">
+    <div class="form-group"><label>Athlete name</label><input id="inv-name" type="text" placeholder="First Last" required></div>
+    <div class="form-group"><label>Email address</label><input id="inv-email" type="email" placeholder="athlete@example.com" required></div>
+    <div id="inv-err" style="display:none" class="alert alert-error"></div>
+    <button type="submit" id="inv-btn" class="btn btn-primary btn-full">Send Invite</button>
+  </form>
+</div>`;
+
+VIEWS.coach_athlete_detail = ()=>{
+  const {athlete:ath, assignment:asgn, logs, notes, partner, templates} = APP.state;
+  if(!ath) return `<div class="page"><p>Athlete not found.</p></div>`;
+  const ap = ath.athlete_profiles||{};
+  const tpl = asgn?.plan_templates;
+  const week = asgn ? APP.getAthleteWeek(asgn) : 0;
+  const completedCount = logs.filter(l=>l.completed).length;
+  const avgRpe = logs.filter(l=>l.rpe).length ? (logs.reduce((s,l)=>s+(parseFloat(l.rpe)||0),0)/logs.filter(l=>l.rpe).length).toFixed(1) : '—';
+  return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<div></div>${hamburgerBtn()}</div>
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+    <div class="avatar avatar-lg">${avatarLetters(ath.name)}</div>
+    <div>
+      <h1>${ath.name}</h1>
+      <div style="color:var(--text2);font-size:.9rem">${ath.email}</div>
+      <div style="margin-top:4px;display:flex;gap:6px">
+        ${ap.race_format?`<span class="tag tag-yellow">${ap.race_format}</span>`:''}
+        ${ap.level?`<span class="tag tag-gray">${ap.level}</span>`:''}
+      </div>
+    </div>
+  </div>
+  ${ap.race_date?raceCountdown(ap.race_date):''}
+  <div class="section" style="margin-top:16px">
+    <div class="section-header"><h2>Training Plan</h2></div>
+    ${asgn&&tpl?`<div class="card">
+      <div style="font-weight:700">${tpl.name}</div>
+      <div style="font-size:.85rem;color:var(--text2);margin-top:2px">Started ${new Date(asgn.start_date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div>
+      <div style="margin-top:10px">
+        <div style="font-size:.8rem;color:var(--text2);margin-bottom:4px">Week ${week} of ${tpl.length_weeks} · ${phaseForWeek(week).name}</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(week/tpl.length_weeks*100)}%"></div></div>
+      </div>
+      ${asgn.coach_notes?`<div style="margin-top:12px;font-size:.85rem;background:var(--card2);border-radius:8px;padding:10px">${asgn.coach_notes}</div>`:''}
+      <div class="card-actions">
+        <button class="btn btn-ghost btn-sm" onclick="APP.openModal(MODALS.assignPlan('${ath.id}'))">Change plan</button>
+        <button class="btn btn-ghost btn-sm" onclick="APP.openModal(MODALS.editAssignment('${asgn.id}','${asgn.coach_notes||''}'))">Edit notes</button>
+      </div>
+    </div>`:`<div class="card"><p>No plan assigned yet.</p><div class="card-actions"><button class="btn btn-primary btn-sm" onclick="APP.openModal(MODALS.assignPlan('${ath.id}'))">Assign plan</button></div></div>`}
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Stats</h2></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="val">${completedCount}</div><div class="lbl">Workouts done</div></div>
+      <div class="stat-card"><div class="val">${avgRpe}</div><div class="lbl">Avg RPE</div></div>
+    </div>
+  </div>
+  ${partner?`<div class="section">
+    <div class="section-header"><h2>Doubles Partner</h2></div>
+    <div class="card card-row" onclick="APP.go('coach_athlete_detail',{athleteId:'${partner.id}'})" style="cursor:pointer">
+      <div class="avatar">${avatarLetters(partner.name)}</div>
+      <div><div style="font-weight:700">${partner.name}</div><div style="font-size:.82rem;color:var(--text2)">${partner.email}</div></div>
+    </div>
+  </div>`:''}
+  <div class="section">
+    <div class="section-header"><h2>Profile</h2></div>
+    <div class="card">
+      ${[['Race Date',ap.race_date?new Date(ap.race_date).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'}):'—'],['Weekly Running',ap.weekly_run||'—'],['Strength Exp',ap.strength_exp||'—'],['Injuries',ap.injuries||'None'],['HYROX Exp',ap.hyrox_exp||'—'],['Available Days',(ap.available_days||[]).join(', ')||'—']].map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.9rem"><span style="color:var(--text2)">${k}</span><span>${v}</span></div>`).join('')}
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Coach Notes</h2><button class="btn btn-ghost btn-sm" onclick="APP.openModal(MODALS.addNote('${ath.id}'))">${I.plus} Note</button></div>
+    ${notes.length===0?'<div class="card"><p>No notes yet.</p></div>':''}
+    ${notes.map(n=>`<div class="card">
+      <div style="font-size:.8rem;color:var(--text2);margin-bottom:6px">${new Date(n.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div>
+      <div>${n.content}</div>
+    </div>`).join('')}
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Recent Workout Logs</h2></div>
+    ${logs.length===0?'<div class="card"><p>No workouts logged yet.</p></div>':''}
+    ${logs.slice(0,5).map(l=>`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div><div style="font-weight:600">Wk ${l.week} Day ${l.day}</div><div style="font-size:.8rem;color:var(--text2)">${new Date(l.completed_at).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div></div>
+        <div style="display:flex;gap:6px">
+          ${l.completed?'<span class="tag tag-green">Done</span>':'<span class="tag tag-red">Skipped</span>'}
+          ${l.rpe?`<span class="tag tag-orange">RPE ${l.rpe}</span>`:''}
+        </div>
+      </div>
+      ${l.feedback?`<div style="margin-top:8px;font-size:.9rem;color:var(--text2)">${l.feedback}</div>`:''}
+      ${l.adjustment_requested&&!l.adjustment_resolved?`<div style="margin-top:8px"><span class="tag tag-orange">${I.flag} Adjustment requested</span></div>`:''}
+    </div>`).join('')}
+  </div>
+</div>`;
+};
+
+VIEWS.coach_plans = ()=>{
+  const {templates} = APP.state;
+  return `
+<div class="page">
+  <div class="top-bar"><h1>Plans</h1><div style="display:flex;align-items:center;gap:8px"><button class="btn btn-ghost btn-sm" onclick="APP.go('coach_create_plan')">${I.plus} New Plan</button>${hamburgerBtn()}</div></div>
+  ${templates.length===0?`<div class="empty"><div class="empty-icon">📋</div><h3>No plans yet</h3><p>Create a training plan to assign to athletes.</p></div>`:''}
+  ${templates.map(t=>`<div class="card" onclick="APP.go('coach_plan_detail',{templateId:'${t.id}'})" style="cursor:pointer">
+    <div style="display:flex;justify-content:space-between;align-items:start">
+      <div>
+        <div style="font-weight:700">${t.name}</div>
+        <div style="font-size:.85rem;color:var(--text2);margin-top:2px">${t.length_weeks} weeks · ${t.format||'Solo'} · ${t.level||'All levels'}</div>
+      </div>
+      <span class="tag tag-gray">${t.assignments?.[0]?.count||0} athletes</span>
+    </div>
+  </div>`).join('')}
+</div>
+${coachNav('coach_plans')}`;
+};
+
+VIEWS.coach_plan_detail = ()=>{
+  const {template:t, assignments} = APP.state;
+  if(!t) return `<div class="page"><p>Plan not found.</p></div>`;
+  return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<div></div><button class="btn btn-ghost btn-sm" onclick="APP.go('coach_edit_plan',{templateId:'${t.id}',week:1})">Edit</button></div>
+  <h1 style="margin-bottom:4px">${t.name}</h1>
+  <p style="margin-bottom:16px;font-size:.9rem">${t.description||''}</p>
+  <div class="stats-grid" style="margin-bottom:24px">
+    <div class="stat-card"><div class="val">${t.length_weeks}</div><div class="lbl">Weeks</div></div>
+    <div class="stat-card"><div class="val">${assignments.length}</div><div class="lbl">Athletes</div></div>
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Phases</h2></div>
+    ${(t.phases||[]).map(p=>`<div class="phase-header"><h3 style="color:${p.color||'var(--primary)'}">${p.name}</h3><div style="font-size:.82rem;color:var(--text2);margin-top:2px">Weeks ${(p.weeks||[]).join(', ')}</div><p style="margin-top:4px;font-size:.85rem">${p.description||''}</p></div>`).join('')}
+  </div>
+  ${assignments.length>0?`<div class="section">
+    <div class="section-header"><h2>Assigned Athletes</h2></div>
+    ${assignments.map(a=>`<div class="card card-row" onclick="APP.go('coach_athlete_detail',{athleteId:'${a.athlete_id}'})" style="cursor:pointer">
+      <div class="avatar">${avatarLetters(a.profiles?.name||'?')}</div>
+      <div><div style="font-weight:700">${a.profiles?.name}</div><div style="font-size:.82rem;color:var(--text2)">Started ${new Date(a.start_date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div></div>
+    </div>`).join('')}
+  </div>`:''}
+</div>`;
+};
+
+VIEWS.coach_create_plan = ()=>`
+<div class="page">
+  <div class="top-bar">${backBtn()}<h1 style="font-size:1.1rem">New Plan</h1><div style="width:40px"></div></div>
+  <form onsubmit="ACTIONS.createPlan(event)" style="margin-top:16px">
+    <div class="form-group"><label>Plan name</label><input id="cp-name" required placeholder="e.g. HYROX Doubles 20 Week"></div>
+    <div class="form-group"><label>Description</label><textarea id="cp-desc" placeholder="Brief overview of this plan"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>Weeks</label><input id="cp-weeks" type="number" value="20" min="1" max="52"></div>
+      <div class="form-group"><label>Format</label><select id="cp-format"><option>Solo</option><option>Doubles</option><option>Relay</option></select></div>
+    </div>
+    <div class="form-group"><label>Level</label><select id="cp-level"><option>Beginner</option><option>Beginner–Intermediate</option><option>Intermediate</option><option>Advanced</option></select></div>
+    <button type="submit" id="cp-btn" class="btn btn-primary btn-full">Create Plan</button>
+  </form>
+</div>`;
+
+VIEWS.coach_edit_plan = ()=>{
+  const {template:t, editWeek, library} = APP.state;
+  if(!t) return `<div class="page"><p>Plan not found.</p></div>`;
+  const week = editWeek||1;
+  const dayWorkouts = (t.workouts||[]).filter(w=>w.week===week);
+  const TYPES=['Run','Strength','HYROX Sim','HYROX Skills','Long Run','Recovery','Rest','Skills','Half HYROX Sim'];
+  const weeks = Array.from({length:t.length_weeks||20},(_,i)=>i+1);
+  return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<h1 style="font-size:1rem">${t.name}</h1><button class="btn btn-primary btn-sm" onclick="ACTIONS.savePlanMeta('${t.id}')">Save</button></div>
+  <div class="section">
+    <div class="section-header"><h2>Plan Details</h2></div>
+    <div class="card">
+      <div class="form-group"><label>Name</label><input id="ep-name" value="${t.name}"></div>
+      <div class="form-group"><label>Description</label><textarea id="ep-desc">${t.description||''}</textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Weeks</label><input id="ep-weeks" type="number" value="${t.length_weeks||20}"></div>
+        <div class="form-group"><label>Format</label><select id="ep-format"><option ${t.format==='Solo'?'selected':''}>Solo</option><option ${t.format==='Doubles'?'selected':''}>Doubles</option></select></div>
+      </div>
+      <div class="form-group"><label>Level</label><select id="ep-level"><option ${t.level==='Beginner'?'selected':''}>Beginner</option><option ${t.level==='Beginner–Intermediate'?'selected':''}>Beginner–Intermediate</option><option ${t.level==='Intermediate'?'selected':''}>Intermediate</option><option ${t.level==='Advanced'?'selected':''}>Advanced</option></select></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Workouts</h2></div>
+    <div class="week-tabs">
+      ${weeks.map(w=>`<div class="week-tab ${w===week?'active':''}" onclick="APP.go('coach_edit_plan',{templateId:'${t.id}',week:${w}})">Wk ${w}</div>`).join('')}
+    </div>
+    ${dayWorkouts.length===0?`<div class="card"><p>No workouts for week ${week}. Add one below.</p></div>`:''}
+    ${dayWorkouts.map((w,i)=>`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-weight:700">Day ${w.day} · <span class="tag ${typeColor(w.type)}" style="padding:2px 8px">${w.type}</span></div>
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="ACTIONS.removeWorkout('${t.id}',${week},${w.day})">${I.trash}</button>
+      </div>
+      <div class="form-group"><label>Title</label><input class="ep-title" data-day="${w.day}" value="${w.title}" onchange="ACTIONS.updateWorkoutField('${t.id}',${week},${w.day},'title',this.value)"></div>
+      <div class="form-group"><label>Description</label><textarea class="ep-desc" data-day="${w.day}" onchange="ACTIONS.updateWorkoutField('${t.id}',${week},${w.day},'description',this.value)">${w.description||''}</textarea></div>
+    </div>`).join('')}
+    <button class="btn btn-ghost btn-full" onclick="APP.openModal(MODALS.addWorkout('${t.id}',${week}))">${I.plus} Add day ${dayWorkouts.length+1} workout</button>
+  </div>
+</div>`;
+};
+
+VIEWS.coach_feedback = ()=>{
+  const {logs, checkins} = APP.state;
+  const adjLogs = logs.filter(l=>l.adjustment_requested&&!l.adjustment_resolved);
+  const reviewed = logs.filter(l=>!l.coach_reviewed).slice(0,10);
+  return `
+<div class="page">
+  <div class="top-bar"><h1>Feedback</h1>${hamburgerBtn()}</div>
+  ${adjLogs.length>0?`<div class="section">
+    <div class="section-header"><h2>Adjustment Requests (${adjLogs.length})</h2></div>
+    ${adjLogs.map(l=>`<div class="card" style="border-left:3px solid var(--accent)">
+      <div style="display:flex;justify-content:space-between">
+        <div><div style="font-weight:600">${l.profiles?.name} · Wk ${l.week} D${l.day}</div><div style="font-size:.8rem;color:var(--text2)">${new Date(l.completed_at).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div></div>
+        <button class="btn btn-accent btn-sm" onclick="APP.openModal(MODALS.coachAdjust('${l.id}'))">Adjust</button>
+      </div>
+      ${l.adjustment_note?`<div style="margin-top:8px" class="adj-badge"><div class="adj-label">Athlete note</div><div style="font-size:.88rem;margin-top:4px">${l.adjustment_note}</div></div>`:''}
+      ${l.feedback?`<div style="margin-top:6px;font-size:.9rem;color:var(--text2)">${l.feedback}</div>`:''}
+    </div>`).join('')}
+  </div>`:`<div class="alert alert-success" style="margin-top:8px">No pending adjustment requests.</div>`}
+  <div class="section">
+    <div class="section-header"><h2>Recent Logs</h2></div>
+    ${reviewed.length===0?'<div class="card"><p>All logs reviewed.</p></div>':''}
+    ${reviewed.map(l=>`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div><div style="font-weight:600">${l.profiles?.name} · Wk ${l.week} D${l.day}</div><div style="font-size:.8rem;color:var(--text2)">${new Date(l.completed_at).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${l.completed?'<span class="tag tag-green">Done</span>':'<span class="tag tag-red">Skipped</span>'}
+          ${l.rpe?`<span class="tag tag-orange">RPE ${l.rpe}</span>`:''}
+        </div>
+      </div>
+      ${l.feedback?`<div style="margin-top:8px;font-size:.9rem;color:var(--text2)">${l.feedback}</div>`:''}
+      <div style="margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="ACTIONS.markReviewed('${l.id}')">Mark reviewed</button></div>
+    </div>`).join('')}
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Recent Check-ins</h2></div>
+    ${checkins.length===0?'<div class="card"><p>No check-ins yet.</p></div>':''}
+    ${checkins.slice(0,5).map(c=>`<div class="card">
+      <div style="display:flex;justify-content:space-between">
+        <div style="font-weight:600">${c.profiles?.name}</div>
+        <div style="font-size:.8rem;color:var(--text2)">${new Date(c.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px;font-size:.85rem">
+        <span>Energy <strong>${c.energy}/10</strong></span>
+        <span>Soreness <strong>${c.soreness}/10</strong></span>
+        <span>Sleep <strong>${c.sleep}/10</strong></span>
+        <span>Mood <strong>${c.mood}/10</strong></span>
+      </div>
+      ${c.notes?`<div style="margin-top:6px;font-size:.9rem;color:var(--text2)">${c.notes}</div>`:''}
+    </div>`).join('')}
+  </div>
+</div>
+${coachNav('coach_feedback')}`;
+};
+
+VIEWS.coach_library = ()=>{
+  const {library} = APP.state;
+  return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<h1 style="font-size:1.1rem">Workout Library</h1><button class="btn btn-ghost btn-sm" onclick="APP.openModal(MODALS.addLibraryItem())">${I.plus} Add</button></div>
+  ${library.length===0?`<div class="empty"><div class="empty-icon">📚</div><h3>Library is empty</h3><p>Add exercises to build your library.</p></div>`:''}
+  ${library.map(item=>`<div class="lib-item">
+    <div>
+      <div class="li-name">${item.name}</div>
+      <div class="li-detail">${item.type}${item.detail?' · '+item.detail:''}</div>
+    </div>
+    <button class="btn btn-ghost btn-sm btn-icon" onclick="ACTIONS.deleteLibraryItem('${item.id}')">${I.trash}</button>
+  </div>`).join('')}
+</div>`;
+};
+
+VIEWS.coach_profile = ()=>{
+  const prof = APP.profile;
+  return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<h1 style="font-size:1.1rem">My Profile</h1><div style="width:40px"></div></div>
+  <div style="text-align:center;padding:24px 0">
+    <div class="avatar avatar-lg" style="margin:0 auto 12px">${avatarLetters(prof?.name||'?')}</div>
+    <h2>${prof?.name}</h2>
+    <p style="margin-top:4px">${APP.user?.email}</p>
+    <span class="tag tag-yellow" style="margin-top:8px;display:inline-flex">Coach</span>
+  </div>
+  <button class="btn btn-danger btn-full" onclick="APP.logout()">Sign out</button>
+</div>`;
+};
+
+VIEWS.athlete_today = ()=>{
+  const {assignment:asgn, ap, todayWorkout, todayMod, weekWorkouts, weekLogs, todayLog, partner, partnerTodayLog, latestNote, currentWeek, currentDay} = APP.state;
+  const prof = APP.profile;
+  const weekCompleted = (weekLogs||[]).filter(l=>l.completed).length;
+  return `
+<div class="page">
+  <div class="top-bar">
+    <div><small style="color:var(--text2)">Hey ${prof?.name?.split(' ')[0]||'there'} 👋</small><h1>Today</h1></div>
+    ${hamburgerBtn()}
+  </div>
+  ${ap?.race_date ? raceCountdown(ap.race_date) : ''}
+  ${asgn?`
+  <div class="section" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div><span class="tag tag-yellow">Week ${currentWeek}</span> <span style="color:var(--text2);font-size:.85rem">${phaseForWeek(currentWeek).name}</span></div>
+      <div style="font-size:.85rem;color:var(--text2)">${weekCompleted}/${weekWorkouts.length} done</div>
+    </div>
+    <div class="progress-bar" style="margin-bottom:16px"><div class="progress-fill" style="width:${weekWorkouts.length?Math.round(weekCompleted/weekWorkouts.length*100):0}%"></div></div>
+    ${todayWorkout?`
+    <div class="card" style="border-color:var(--primary)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span class="tag tag-yellow">Today</span>
+        <span class="tag ${typeColor(todayWorkout.type)}">${todayWorkout.type}</span>
+      </div>
+      ${todayMod?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:.8rem;color:var(--accent);font-weight:600">${I.edit} Updated by coach</div>`:''}
+      <h2 style="margin-bottom:6px">${todayWorkout.title}</h2>
+      <p style="font-size:.9rem;margin-bottom:12px">${todayWorkout.description}</p>
+      ${(todayWorkout.exercises||[]).map(ex=>`<div style="padding:7px 0;border-top:1px solid var(--border);font-size:.9rem"><span style="font-weight:600">${ex.name}</span>${ex.detail?` <span style="color:var(--text2)">· ${ex.detail}</span>`:''}${ex.notes?`<div style="font-size:.8rem;color:var(--text3)">${ex.notes}</div>`:''}</div>`).join('')}
+      ${todayLog?`<div style="margin-top:14px;background:rgba(0,208,132,.05);border:1px solid rgba(0,208,132,.2);border-radius:8px;padding:12px"><div style="color:var(--success);font-weight:700;margin-bottom:4px">✓ Completed · RPE ${todayLog.rpe||'—'}</div>${todayLog.feedback?`<div style="font-size:.85rem;color:var(--text2)">${todayLog.feedback}</div>`:''}</div>`:`<button class="btn btn-primary btn-full" style="margin-top:14px" onclick="APP.openModal(MODALS.logWorkout(${currentWeek},${currentDay},'${asgn.id}'))">Log this workout</button>`}
+    </div>`:`<div class="card"><h3 style="color:var(--text2)">${new Date().toLocaleDateString('en-AU',{weekday:'long'})}</h3><p style="margin-top:4px">No training scheduled today. Rest and recover.</p></div>`}
+  </div>
+  ${partner?`<div class="section">
+    <div class="section-header"><h2>Partner · ${partner.name?.split(' ')[0]}</h2></div>
+    <div class="card"><div class="card-row">
+      <div class="avatar">${avatarLetters(partner.name)}</div>
+      <div style="flex:1"><div style="font-weight:700">${partner.name}</div><div style="font-size:.82rem;color:var(--text2)">Doubles partner</div></div>
+      ${partnerTodayLog?'<span class="tag tag-green">Done today</span>':'<span class="tag tag-gray">Not logged</span>'}
+    </div></div>
+  </div>`:''}
+  ${latestNote?`<div class="section">
+    <div class="section-header"><h2>From Your Coach</h2></div>
+    <div class="card" style="border-left:3px solid var(--primary)">
+      <div style="font-size:.78rem;color:var(--text2);margin-bottom:6px">${new Date(latestNote.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})}</div>
+      <div>${latestNote.content}</div>
+    </div>
+  </div>`:''}
+  `:`<div class="section" style="margin-top:20px"><div class="empty"><div class="empty-icon">📋</div><h3>No plan assigned</h3><p>Your coach will assign you a training plan soon.</p></div></div>`}
+</div>
+${athleteNav('athlete_today')}`;
+};
+
+VIEWS.athlete_plan = ()=>{
+  const {assignment:asgn, logs, currentWeek} = APP.state;
+  if(!asgn) return `<div class="page"><div style="padding-top:80px" class="empty"><div class="empty-icon">📋</div><h3>No plan yet</h3><p>Your coach will assign you a training plan.</p></div></div>${athleteNav('athlete_plan')}`;
+  const tpl = asgn.plan_templates;
+  const viewWeek = parseInt(APP.params.week)||currentWeek;
+  const mods = asgn.modifications||[];
+  const dayWorkouts = (tpl.workouts||[]).filter(w=>w.week===viewWeek).map(w=>{
+    const mod = mods.find(m=>m.week===w.week&&m.day===w.day);
+    return mod ? {...mod,_coachEdited:true} : w;
+  });
+  const weeks = Array.from({length:tpl.length_weeks||20},(_,i)=>i+1);
+  return `
+<div class="page">
+  <div class="top-bar"><h1>My Plan</h1>${hamburgerBtn()}</div>
+  <div style="font-size:.9rem;color:var(--text2);margin-bottom:12px">${tpl.name}</div>
+  <div class="week-tabs">
+    ${weeks.map(w=>`<div class="week-tab ${w===viewWeek?'active':''}" onclick="APP.go('athlete_plan',{week:${w}})">Wk ${w}</div>`).join('')}
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+    <span class="tag" style="background:${phaseForWeek(viewWeek).color}20;color:${phaseForWeek(viewWeek).color}">${phaseForWeek(viewWeek).name}</span>
+    ${viewWeek===currentWeek?'<span class="tag tag-yellow">Current week</span>':''}
+  </div>
+  ${dayWorkouts.length===0?`<div class="card"><p>No workouts scheduled for week ${viewWeek}.</p></div>`:''}
+  ${dayWorkouts.map(w=>{
+    const log = (logs||[]).find(l=>l.week===w.week&&l.day===w.day);
+    const isToday = viewWeek===currentWeek && w.day===APP.getTodayDayIndex();
+    return `<div class="workout-day ${log?.completed?'completed':''} ${isToday?'today':''}">
+      <div class="day-header">
+        <div>
+          <div style="font-weight:700">Day ${w.day} · ${w.title}</div>
+          <div class="day-type">${w.type}${w._coachEdited?' · <span style="color:var(--accent)">Coach updated</span>':''}</div>
+        </div>
+        <div class="check-circle ${log?.completed?'done':''}">${log?.completed?`<span style="color:#000">${I.ok}</span>`:''}</div>
+      </div>
+      ${w.description?`<p style="font-size:.85rem;margin-top:6px">${w.description}</p>`:''}
+    </div>`;
+  }).join('')}
+</div>
+${athleteNav('athlete_plan')}`;
+};
+
+VIEWS.athlete_progress = ()=>{
+  const {logs, checkins} = APP.state;
+  const completed = logs.filter(l=>l.completed).length;
+  const total = logs.length;
+  const avgRpe = logs.filter(l=>l.rpe).length ? (logs.reduce((s,l)=>s+(parseFloat(l.rpe)||0),0)/logs.filter(l=>l.rpe).length).toFixed(1) : '—';
+  return `
+<div class="page">
+  <div class="top-bar"><h1>Progress</h1>${hamburgerBtn()}</div>
+  <div class="stats-grid" style="margin-bottom:24px">
+    <div class="stat-card"><div class="val">${completed}</div><div class="lbl">Workouts done</div></div>
+    <div class="stat-card"><div class="val">${total>0?Math.round(completed/total*100):0}%</div><div class="lbl">Completion rate</div></div>
+    <div class="stat-card"><div class="val">${avgRpe}</div><div class="lbl">Avg RPE</div></div>
+    <div class="stat-card"><div class="val">${logs.filter(l=>l.adjustment_requested).length}</div><div class="lbl">Adjustments</div></div>
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Recent Workouts</h2></div>
+    ${logs.length===0?'<div class="card"><p>No workouts logged yet.</p></div>':''}
+    ${logs.slice(0,10).map(l=>`<div class="card">
+      <div style="display:flex;justify-content:space-between">
+        <div style="font-weight:600">Wk ${l.week} Day ${l.day}</div>
+        <div style="display:flex;gap:6px">
+          ${l.completed?'<span class="tag tag-green">Done</span>':'<span class="tag tag-red">Skipped</span>'}
+          ${l.rpe?`<span class="tag tag-orange">RPE ${l.rpe}</span>`:''}
+        </div>
+      </div>
+      ${l.feedback?`<p style="margin-top:6px;font-size:.9rem">${l.feedback}</p>`:''}
+    </div>`).join('')}
+  </div>
+  <div class="section">
+    <div class="section-header"><h2>Check-in History</h2></div>
+    ${checkins.length===0?'<div class="card"><p>No check-ins yet.</p></div>':''}
+    ${checkins.slice(0,5).map(c=>`<div class="card">
+      <div style="display:flex;justify-content:space-between"><div style="font-weight:600">${new Date(c.date).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}</div></div>
+      <div style="display:flex;gap:12px;margin-top:8px;font-size:.85rem">
+        <span>E <strong>${c.energy}</strong></span><span>S <strong>${c.soreness}</strong></span><span>💤 <strong>${c.sleep}</strong></span><span>M <strong>${c.mood}</strong></span>
+      </div>
+    </div>`).join('')}
+  </div>
+</div>
+${athleteNav('athlete_progress')}`;
+};
+
+VIEWS.athlete_checkin = ()=>{
+  const {todayCheckin, recentCheckins} = APP.state;
+  return `
+<div class="page">
+  <div class="top-bar"><h1>Check-in</h1>${hamburgerBtn()}</div>
+  ${todayCheckin?`<div class="alert alert-success">Today's check-in submitted ✓ <button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="ACTIONS._editCheckin()">Edit</button></div>`:''}
+  <form id="checkin-form" onsubmit="ACTIONS.submitCheckin(event)" ${todayCheckin?'style="display:none"':''}>
+    ${[['ci-energy','Energy level','1 = exhausted, 10 = best ever'],['ci-soreness','Muscle soreness','1 = none, 10 = very sore'],['ci-sleep','Sleep quality','1 = terrible, 10 = perfect'],['ci-mood','Mood','1 = terrible, 10 = amazing']].map(([id,label,hint])=>`
+    <div class="form-group">
+      <label>${label}</label>
+      <div style="font-size:.78rem;color:var(--text2);margin-bottom:6px">${hint}</div>
+      <div class="rpe-scale" id="${id}-scale">
+        ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button type="button" class="rpe-btn ${todayCheckin&&todayCheckin[id.replace('ci-','')]===n?'selected':''}" onclick="selectScale('${id}',${n},'${id}-scale')">${n}</button>`).join('')}
+      </div>
+      <input type="hidden" id="${id}" value="${todayCheckin?todayCheckin[id.replace('ci-','')]||'':''}">
+    </div>`).join('')}
+    <div class="form-group"><label>Notes for coach</label><textarea id="ci-notes" placeholder="How are you feeling? Anything your coach should know?">${todayCheckin?.notes||''}</textarea></div>
+    <button type="submit" class="btn btn-primary btn-full">Submit check-in</button>
+  </form>
+  ${recentCheckins.length>1?`<div class="section" style="margin-top:24px">
+    <div class="section-header"><h2>Recent</h2></div>
+    ${recentCheckins.slice(1,5).map(c=>`<div class="card">
+      <div style="display:flex;justify-content:space-between"><div style="font-weight:600">${new Date(c.date).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}</div></div>
+      <div style="display:flex;gap:12px;margin-top:8px;font-size:.85rem">
+        <span>Energy <strong>${c.energy}</strong></span><span>Sore <strong>${c.soreness}</strong></span><span>Sleep <strong>${c.sleep}</strong></span><span>Mood <strong>${c.mood}</strong></span>
+      </div>
+      ${c.notes?`<p style="margin-top:6px;font-size:.88rem">${c.notes}</p>`:''}
+    </div>`).join('')}
+  </div>`:''}
+</div>
+${athleteNav('athlete_checkin')}`;
+};
+
+VIEWS.athlete_notes = ()=>{
+  const {notes} = APP.state;
+  return `
+<div class="page">
+  <div class="top-bar"><h1>Notes</h1>${hamburgerBtn()}</div>
+  <p style="margin-bottom:16px;font-size:.9rem">Notes and messages from your coach.</p>
+  ${notes.length===0?`<div class="empty"><div class="empty-icon">📝</div><h3>No notes yet</h3><p>Your coach will leave notes and feedback here.</p></div>`:''}
+  ${notes.map(n=>`<div class="card" style="border-left:3px solid var(--primary)">
+    <div style="font-size:.78rem;color:var(--text2);margin-bottom:6px">${new Date(n.created_at).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})}</div>
+    <div>${n.content}</div>
+  </div>`).join('')}
+</div>
+${athleteNav('athlete_notes')}`;
+};
+
+VIEWS.athlete_profile = ()=>{
+  const {ap} = APP.state;
+  const prof = APP.profile;
+  return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<h1 style="font-size:1.1rem">My Profile</h1><div style="width:40px"></div></div>
+  <div style="text-align:center;padding:24px 0">
+    <div class="avatar avatar-lg" style="margin:0 auto 12px">${avatarLetters(prof?.name||'?')}</div>
+    <h2>${prof?.name}</h2>
+    <p style="margin-top:4px">${APP.user?.email}</p>
+    <span class="tag tag-green" style="margin-top:8px;display:inline-flex">Athlete</span>
+  </div>
+  ${ap?`<div class="card">
+    ${[['Race Date',ap.race_date?new Date(ap.race_date).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'}):'—'],['Race Format',ap.race_format||'—'],['Level',ap.level||'—'],['Weekly Running',ap.weekly_run||'—'],['Strength Exp',ap.strength_exp||'—'],['HYROX Exp',ap.hyrox_exp||'—'],['Injuries',ap.injuries||'None'],['Available Days',(ap.available_days||[]).join(', ')||'—']].map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.9rem"><span style="color:var(--text2)">${k}</span><span>${v}</span></div>`).join('')}
+  </div>`:'<div class="card"><p>No profile data yet.</p></div>'}
+  <button class="btn btn-danger btn-full" style="margin-top:16px" onclick="APP.logout()">Sign out</button>
+</div>`;
+};
+
+VIEWS.athlete_race_info = ()=>{
+  const {ap} = APP.state;
+  return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<h1 style="font-size:1.1rem">Race Info</h1><div style="width:40px"></div></div>
+  ${ap?.race_date?raceCountdown(ap.race_date):''}
+  <div class="card" style="margin-top:16px">
+    ${ap?[['Race Date',ap.race_date?new Date(ap.race_date).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'Not set'],['Format',ap.race_format||'—'],['Partner',ap.partner_id?'Partner assigned':'Solo / not set']].map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">${k}</span><span style="font-weight:600">${v}</span></div>`).join(''):'<p>No race info yet.</p>'}
+  </div>
+</div>`;
+};
+
+VIEWS.athlete_baseline = ()=>{
+  const {logs} = APP.state;
+  const total = logs.length, done = logs.filter(l=>l.completed).length;
+  return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<h1 style="font-size:1.1rem">My Baseline</h1><div style="width:40px"></div></div>
+  <div class="stats-grid" style="margin-bottom:24px">
+    <div class="stat-card"><div class="val">${done}</div><div class="lbl">Sessions done</div></div>
+    <div class="stat-card"><div class="val">${total>0?Math.round(done/total*100):0}%</div><div class="lbl">Completion</div></div>
+  </div>
+  <div class="card"><p style="text-align:center">Baseline tracking coming soon. Your workout history is being collected.</p></div>
+</div>`;
+};
+
+// ============================================================
+// MODALS
+// ============================================================
+const MODALS = {
+  logWorkout(week,day,asgnId){
+    return `
+<h2 style="margin-bottom:4px">Log Workout</h2>
+<p style="margin-bottom:20px">Week ${week} · Day ${day}</p>
+<form onsubmit="ACTIONS.logWorkout(event,${week},${day},'${asgnId}')">
+  <div class="form-group">
+    <label>Did you complete this workout?</label>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button type="button" class="btn btn-secondary" id="comp-yes" onclick="selectCompletion(true)">✓ Yes</button>
+      <button type="button" class="btn btn-secondary" id="comp-no" onclick="selectCompletion(false)">✗ Skipped</button>
+    </div>
+    <input type="hidden" id="log-completed">
+  </div>
+  <div class="form-group">
+    <label>RPE (Rate of Perceived Exertion)</label>
+    <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--text2);margin-bottom:6px"><span>Easy</span><span>Max effort</span></div>
+    <div class="rpe-scale" id="log-rpe-scale">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button type="button" class="rpe-btn" onclick="selectScale('log-rpe',${n},'log-rpe-scale')">${n}</button>`).join('')}</div>
+    <input type="hidden" id="log-rpe">
+  </div>
+  <div class="form-group"><label>How did it go?</label><textarea id="log-feedback" placeholder="How did this session feel? Any notes for your coach?"></textarea></div>
+  <div class="form-group"><label>Next-day soreness / notes</label><textarea id="log-soreness" placeholder="Record after you wake up tomorrow (optional)"></textarea></div>
+  <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600">
+      <input type="checkbox" id="log-adj-req" style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0">
+      <span>Request adjustment from coach</span>
+    </label>
+    <div id="adj-note-wrap" style="display:none;margin-top:10px">
+      <textarea id="log-adj-note" placeholder="What would you like changed? Be specific." style="font-size:.88rem"></textarea>
+    </div>
+  </div>
+  <script>document.getElementById('log-adj-req').onchange=function(){document.getElementById('adj-note-wrap').style.display=this.checked?'block':'none'};<\/script>
+  <button type="submit" class="btn btn-primary btn-full">Save Log</button>
+</form>`;
+  },
+
+  assignPlan(athleteId){
+    const templates = APP.state.templates||[];
+    return `
+<h2 style="margin-bottom:16px">Assign Plan</h2>
+<form onsubmit="ACTIONS.assignPlan(event,'${athleteId}')">
+  <div class="form-group"><label>Plan Template</label>
+    <select id="ap-template">${templates.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select>
+  </div>
+  <div class="form-group"><label>Start Date</label><input type="date" id="ap-start" required value="${new Date().toISOString().split('T')[0]}"></div>
+  <div class="form-group"><label>Coach Notes / Modifications</label><textarea id="ap-notes" placeholder="Any specific notes or modifications for this athlete"></textarea></div>
+  <button type="submit" class="btn btn-primary btn-full">Assign Plan</button>
+</form>`;
+  },
+
+  editAssignment(asgnId, currentNotes){
+    return `
+<h2 style="margin-bottom:16px">Edit Assignment Notes</h2>
+<form onsubmit="ACTIONS.editAssignment(event,'${asgnId}')">
+  <div class="form-group"><label>Coach Notes</label><textarea id="ea-notes" rows="5">${currentNotes||''}</textarea></div>
+  <button type="submit" class="btn btn-primary btn-full">Save</button>
+</form>`;
+  },
+
+  addNote(athleteId){
+    return `
+<h2 style="margin-bottom:16px">Add Coach Note</h2>
+<form onsubmit="ACTIONS.addNote(event,'${athleteId}')">
+  <div class="form-group"><label>Note</label><textarea id="note-content" rows="5" placeholder="Write a note for this athlete…"></textarea></div>
+  <button type="submit" class="btn btn-primary btn-full">Save note</button>
+</form>`;
+  },
+
+  addLibraryItem(){
+    const TYPES=['Run','Strength','HYROX Sim','HYROX Skills','Long Run','Recovery','Rest','Skills','Half HYROX Sim'];
+    return `
+<h2 style="margin-bottom:16px">Add to Library</h2>
+<form onsubmit="ACTIONS.addLibraryItem(event)">
+  <div class="form-group"><label>Exercise Name</label><input id="li-name" required placeholder="e.g. Tempo Run"></div>
+  <div class="form-group"><label>Type</label><select id="li-type">${TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+  <div class="form-group"><label>Sets / Reps / Duration</label><input id="li-detail" placeholder="e.g. 4×8 @ 70% · 30 min @ Z2"></div>
+  <div class="form-group"><label>Coaching Notes</label><input id="li-notes" placeholder="Optional tip or cue"></div>
+  <button type="submit" class="btn btn-primary btn-full">Add to library</button>
+</form>`;
+  },
+
+  addWorkout(templateId, week){
+    const TYPES=['Run','Strength','HYROX Sim','HYROX Skills','Long Run','Recovery','Rest','Skills','Half HYROX Sim'];
+    const existing = (APP.state.template?.workouts||[]).filter(w=>w.week===week).length;
+    const nextDay = existing+1;
+    return `
+<h2 style="margin-bottom:16px">Add Workout — Week ${week} Day ${nextDay}</h2>
+<form onsubmit="ACTIONS.addWorkout(event,'${templateId}',${week},${nextDay})">
+  <div class="form-group"><label>Type</label><select id="aw-type">${TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+  <div class="form-group"><label>Title</label><input id="aw-title" required placeholder="e.g. Tempo Run"></div>
+  <div class="form-group"><label>Description</label><textarea id="aw-desc" placeholder="Overview of this session"></textarea></div>
+  <button type="submit" class="btn btn-primary btn-full">Add workout</button>
+</form>`;
+  },
+
+  coachAdjust(logId){
+    const log = (APP.state.logs||[]).find(l=>l.id===logId);
+    if(!log) return '<p>Log not found.</p>';
+    const asgn = APP.state.assignment;
+    const ath = APP.state.athlete;
+    const TYPES=['Run','Strength','HYROX Sim','HYROX Skills','Long Run','Recovery','Rest','Skills','Half HYROX Sim'];
+    return `
+<h2 style="margin-bottom:4px">Adjust Workout</h2>
+<p style="margin-bottom:16px">Wk ${log.week} Day ${log.day}</p>
+${log.adjustment_note?`<div class="adj-badge" style="margin-bottom:16px"><div class="adj-label">Athlete note</div><div style="font-size:.88rem;margin-top:4px">${log.adjustment_note}</div></div>`:''}
+<div class="tabs">
+  <div class="tab active" id="adj-tab-edit" onclick="switchAdjTab('edit')">Edit workout</div>
+  <div class="tab" id="adj-tab-rest" onclick="switchAdjTab('rest')">Set rest day</div>
+  <div class="tab" id="adj-tab-noc" onclick="switchAdjTab('noc')">No change</div>
+</div>
+<div id="adj-edit">
+  <form onsubmit="ACTIONS.applyAdjustment(event,'${logId}')">
+    <div class="form-group"><label>Type</label><select id="adj-type">${TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+    <div class="form-group"><label>Title</label><input id="adj-title" placeholder="Workout title" required></div>
+    <div class="form-group"><label>Description</label><textarea id="adj-desc" placeholder="Session overview"></textarea></div>
+    <div class="form-group"><label>Reply to athlete (optional)</label><textarea id="adj-reply" placeholder="Let the athlete know what changed and why"></textarea></div>
+    <button type="submit" class="btn btn-accent btn-full">Apply adjustment</button>
+  </form>
+</div>
+<div id="adj-rest" style="display:none">
+  <div class="form-group"><label>Reply to athlete</label><textarea id="adj-rest-reply" placeholder="Reason for rest day">Rest day — your body needs recovery.</textarea></div>
+  <button class="btn btn-accent btn-full" onclick="ACTIONS.applyRestDay('${logId}')">Set rest day</button>
+</div>
+<div id="adj-noc" style="display:none">
+  <p style="margin-bottom:16px">Mark as resolved without changing the workout.</p>
+  <button class="btn btn-ghost btn-full" onclick="ACTIONS.resolveAdjustment('${logId}')">Mark resolved</button>
+</div>
+<script>
+function switchAdjTab(t){
+  ['edit','rest','noc'].forEach(x=>{
+    document.getElementById('adj-'+x).style.display=x===t?'block':'none';
+    document.getElementById('adj-tab-'+x).className='tab'+(x===t?' active':'');
+  });
+}
+<\/script>`;
+  },
+};
+
+// ============================================================
+// ACTIONS
+// ============================================================
+const ACTIONS = {
+  async login(e){
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    btn.disabled=true; btn.textContent='Signing in…';
+    const {error} = await sb.auth.signInWithPassword({
+      email: document.getElementById('l-email').value,
+      password: document.getElementById('l-pass').value,
+    });
+    if(error){
+      document.getElementById('login-err').style.display='block';
+      btn.disabled=false; btn.textContent='Sign In';
+    }
+    // onAuthStateChange handles routing on success
+  },
+
+  async setupProfile(e){
+    e.preventDefault();
+    const btn = document.getElementById('sp-btn');
+    btn.disabled=true; btn.textContent='Saving…';
+    const name = document.getElementById('sp-name').value.trim();
+    const pass = document.getElementById('sp-pass').value;
+    // Set password
+    const {error:pe} = await sb.auth.updateUser({password:pass});
+    if(pe){ showToast('Error setting password. Try again.',true); btn.disabled=false; btn.textContent='Complete setup'; return; }
+    // Create profiles row
+    const {error:prof_err} = await sb.from('profiles').insert({id:APP.user.id,name,email:APP.user.email,role:'athlete'});
+    if(prof_err){ showToast('Error saving profile.',true); btn.disabled=false; btn.textContent='Complete setup'; return; }
+    // Create athlete_profiles row
+    await sb.from('athlete_profiles').insert({
+      id: APP.user.id,
+      race_date: document.getElementById('sp-date').value,
+      race_format: document.getElementById('sp-format').value,
+      level: document.getElementById('sp-level').value,
+      injuries: document.getElementById('sp-injuries').value,
+      weekly_run: '', strength_exp: '', hyrox_exp: '',
+      available_days: ['Mon','Tue','Thu','Fri','Sat'],
+      equipment: 'Full gym',
+    });
+    APP.profile = {id:APP.user.id,name,email:APP.user.email,role:'athlete'};
+    showToast('Profile set up ✓');
+    await APP._nav('athlete_today',{},false);
+  },
+
+  async inviteAthlete(e){
+    e.preventDefault();
+    const btn = document.getElementById('inv-btn');
+    btn.disabled=true; btn.textContent='Sending invite…';
+    const email = document.getElementById('inv-email').value.trim();
+    const name = document.getElementById('inv-name').value.trim();
+    const {error} = await sb.functions.invoke('invite-athlete',{body:{email,name}});
+    if(error){
+      const errEl = document.getElementById('inv-err');
+      errEl.textContent = 'Could not send invite. Make sure the app is deployed and the Edge Function is active.';
+      errEl.style.display='block';
+      btn.disabled=false; btn.textContent='Send Invite';
+      return;
+    }
+    showToast(`Invite sent to ${email} ✓`);
+    await APP.tab('coach_athletes');
+  },
+
+  async assignPlan(e, athleteId){
+    e.preventDefault();
+    // Remove existing assignment if any
+    const existing = APP.state.assignment;
+    if(existing){ await sb.from('assignments').delete().eq('id',existing.id); }
+    const {error} = await sb.from('assignments').insert({
+      athlete_id: athleteId,
+      template_id: document.getElementById('ap-template').value,
+      start_date: document.getElementById('ap-start').value,
+      coach_notes: document.getElementById('ap-notes').value,
+      modifications: [],
+    });
+    if(error){ showToast('Error assigning plan.',true); return; }
+    APP.closeModal();
+    showToast('Plan assigned ✓');
+    await APP.go('coach_athlete_detail',{athleteId});
+  },
+
+  async editAssignment(e, asgnId){
+    e.preventDefault();
+    const {error} = await sb.from('assignments').update({coach_notes:document.getElementById('ea-notes').value}).eq('id',asgnId);
+    if(error){ showToast('Error saving.',true); return; }
+    APP.closeModal();
+    showToast('Notes saved ✓');
+    const asgn = APP.state.assignment;
+    await APP.go('coach_athlete_detail',{athleteId:asgn?.athlete_id});
+  },
+
+  async addNote(e, athleteId){
+    e.preventDefault();
+    const {error} = await sb.from('coach_notes').insert({athlete_id:athleteId,coach_id:APP.user.id,content:document.getElementById('note-content').value});
+    if(error){ showToast('Error saving note.',true); return; }
+    APP.closeModal();
+    showToast('Note saved ✓');
+    await APP.go('coach_athlete_detail',{athleteId});
+  },
+
+  async logWorkout(e, week, day, asgnId){
+    e.preventDefault();
+    const completed = document.getElementById('log-completed').value;
+    if(!completed){ showToast('Select yes or skipped.',true); return; }
+    const adjReq = document.getElementById('log-adj-req')?.checked||false;
+    const {error} = await sb.from('workout_logs').upsert({
+      athlete_id: APP.user.id,
+      assignment_id: asgnId,
+      week, day,
+      completed: completed==='true',
+      rpe: document.getElementById('log-rpe').value||null,
+      feedback: document.getElementById('log-feedback').value,
+      next_day_soreness: document.getElementById('log-soreness').value,
+      adjustment_requested: adjReq,
+      adjustment_note: adjReq?(document.getElementById('log-adj-note')?.value||''):'',
+      completed_at: new Date().toISOString(),
+      coach_reviewed: false,
+    },{onConflict:'athlete_id,assignment_id,week,day'});
+    if(error){ showToast('Error saving log.',true); return; }
+    APP.closeModal();
+    showToast('Workout logged ✓');
+    await APP.tab('athlete_today');
+  },
+
+  async submitCheckin(e){
+    e.preventDefault();
+    const today = new Date().toISOString().split('T')[0];
+    const data = {
+      athlete_id: APP.user.id, date:today,
+      energy: parseInt(document.getElementById('ci-energy').value)||0,
+      soreness: parseInt(document.getElementById('ci-soreness').value)||0,
+      sleep: parseInt(document.getElementById('ci-sleep').value)||0,
+      mood: parseInt(document.getElementById('ci-mood').value)||0,
+      notes: document.getElementById('ci-notes').value,
+    };
+    const existing = APP.state.todayCheckin;
+    const {error} = existing
+      ? await sb.from('checkins').update(data).eq('id',existing.id)
+      : await sb.from('checkins').insert(data);
+    if(error){ showToast('Error saving.',true); return; }
+    showToast('Check-in saved ✓');
+    await APP.tab('athlete_checkin');
+  },
+
+  _editCheckin(){ document.getElementById('checkin-form').style.display='block'; },
+
+  async markReviewed(logId){
+    await sb.from('workout_logs').update({coach_reviewed:true}).eq('id',logId);
+    showToast('Marked reviewed ✓');
+    await APP.go('coach_feedback');
+  },
+
+  async resolveAdjustment(logId){
+    await sb.from('workout_logs').update({adjustment_resolved:true,adjustment_reply:'No change needed'}).eq('id',logId);
+    APP.closeModal();
+    showToast('Marked resolved ✓');
+    await APP.go('coach_feedback');
+  },
+
+  async applyAdjustment(e, logId){
+    e.preventDefault();
+    const log = (APP.state.logs||[]).find(l=>l.id===logId);
+    if(!log) return;
+    // find assignment for this athlete
+    const {data:asgn} = await sb.from('assignments').select('id,modifications').eq('athlete_id',log.athlete_id).maybeSingle();
+    if(!asgn) return;
+    const updatedWorkout = {
+      week:log.week, day:log.day,
+      type: document.getElementById('adj-type').value,
+      title: document.getElementById('adj-title').value,
+      description: document.getElementById('adj-desc').value,
+      exercises: [],
+      adjustedByCoach: true,
+    };
+    const reply = document.getElementById('adj-reply')?.value||'';
+    const mods = asgn.modifications||[];
+    const mi = mods.findIndex(m=>m.week===log.week&&m.day===log.day);
+    if(mi>-1){mods[mi]=updatedWorkout;}else{mods.push(updatedWorkout);}
+    await Promise.all([
+      sb.from('assignments').update({modifications:mods}).eq('id',asgn.id),
+      sb.from('workout_logs').update({adjustment_resolved:true,adjustment_reply:reply||'Adjusted',coach_reviewed:true}).eq('id',logId),
+      reply ? sb.from('coach_notes').insert({athlete_id:log.athlete_id,coach_id:APP.user.id,content:`Wk ${log.week} Day ${log.day}: ${reply}`}) : null,
+    ].filter(Boolean));
+    APP.closeModal();
+    showToast('Adjustment saved ✓');
+    await APP.go('coach_feedback');
+  },
+
+  async applyRestDay(logId){
+    const log = (APP.state.logs||[]).find(l=>l.id===logId);
+    if(!log) return;
+    const {data:asgn} = await sb.from('assignments').select('id,modifications').eq('athlete_id',log.athlete_id).maybeSingle();
+    if(!asgn) return;
+    const reply = document.getElementById('adj-rest-reply')?.value||'Rest day';
+    const restDay = {week:log.week,day:log.day,type:'Rest',title:'Rest Day',description:'Full rest. No training today.',exercises:[],adjustedByCoach:true};
+    const mods = asgn.modifications||[];
+    const mi = mods.findIndex(m=>m.week===log.week&&m.day===log.day);
+    if(mi>-1){mods[mi]=restDay;}else{mods.push(restDay);}
+    await Promise.all([
+      sb.from('assignments').update({modifications:mods}).eq('id',asgn.id),
+      sb.from('workout_logs').update({adjustment_resolved:true,adjustment_reply:reply,coach_reviewed:true}).eq('id',logId),
+      sb.from('coach_notes').insert({athlete_id:log.athlete_id,coach_id:APP.user.id,content:`Wk ${log.week} Day ${log.day}: ${reply}`}),
+    ]);
+    APP.closeModal();
+    showToast('Rest day set ✓');
+    await APP.go('coach_feedback');
+  },
+
+  async createPlan(e){
+    e.preventDefault();
+    const btn = document.getElementById('cp-btn');
+    btn.disabled=true; btn.textContent='Creating…';
+    const {data,error} = await sb.from('plan_templates').insert({
+      name: document.getElementById('cp-name').value,
+      description: document.getElementById('cp-desc').value,
+      length_weeks: parseInt(document.getElementById('cp-weeks').value)||20,
+      format: document.getElementById('cp-format').value,
+      level: document.getElementById('cp-level').value,
+      phases: [], workouts: [],
+      created_by: APP.user.id,
+    }).select().single();
+    if(error){ showToast('Error creating plan.',true); btn.disabled=false; btn.textContent='Create Plan'; return; }
+    await APP.go('coach_edit_plan',{templateId:data.id,week:1});
+  },
+
+  async savePlanMeta(templateId){
+    const {error} = await sb.from('plan_templates').update({
+      name: document.getElementById('ep-name')?.value?.trim()||'',
+      description: document.getElementById('ep-desc')?.value||'',
+      length_weeks: parseInt(document.getElementById('ep-weeks')?.value)||20,
+      format: document.getElementById('ep-format')?.value||'Solo',
+      level: document.getElementById('ep-level')?.value||'Intermediate',
+    }).eq('id',templateId);
+    if(error){ showToast('Error saving.',true); return; }
+    showToast('Plan details saved ✓');
+  },
+
+  async addWorkout(e, templateId, week, day){
+    e.preventDefault();
+    const tpl = APP.state.template;
+    const workouts = [...(tpl.workouts||[])];
+    workouts.push({
+      week, day,
+      type: document.getElementById('aw-type').value,
+      title: document.getElementById('aw-title').value,
+      description: document.getElementById('aw-desc').value,
+      exercises: [],
+    });
+    const {error} = await sb.from('plan_templates').update({workouts}).eq('id',templateId);
+    if(error){ showToast('Error saving.',true); return; }
+    APP.closeModal();
+    showToast('Workout added ✓');
+    await APP.go('coach_edit_plan',{templateId,week});
+  },
+
+  async removeWorkout(templateId, week, day){
+    if(!confirm(`Remove Day ${day} workout from Week ${week}?`)) return;
+    const workouts = (APP.state.template?.workouts||[]).filter(w=>!(w.week===week&&w.day===day));
+    const {error} = await sb.from('plan_templates').update({workouts}).eq('id',templateId);
+    if(error){ showToast('Error.',true); return; }
+    showToast('Workout removed ✓');
+    await APP.go('coach_edit_plan',{templateId,week});
+  },
+
+  async updateWorkoutField(templateId, week, day, field, value){
+    const workouts = JSON.parse(JSON.stringify(APP.state.template?.workouts||[]));
+    const idx = workouts.findIndex(w=>w.week===week&&w.day===day);
+    if(idx>-1){ workouts[idx][field]=value; APP.state.template.workouts=workouts; }
+    await sb.from('plan_templates').update({workouts}).eq('id',templateId);
+  },
+
+  async addLibraryItem(e){
+    e.preventDefault();
+    const {error} = await sb.from('library').insert({
+      name: document.getElementById('li-name').value.trim(),
+      type: document.getElementById('li-type').value,
+      detail: document.getElementById('li-detail').value,
+      notes: document.getElementById('li-notes').value,
+      created_by: APP.user.id,
+    });
+    if(error){ showToast('Error adding.',true); return; }
+    APP.closeModal();
+    showToast('Added to library ✓');
+    await APP.go('coach_library');
+  },
+
+  async deleteLibraryItem(id){
+    if(!confirm('Remove this item?')) return;
+    await sb.from('library').delete().eq('id',id);
+    showToast('Removed ✓');
+    await APP.go('coach_library');
+  },
+};
+
+// ============================================================
+// INIT
+// ============================================================
+APP.init();
+</script>
+</body>
+</html>

@@ -424,6 +424,12 @@ const LOADERS = {
     APP.state.assignments = asgnRes.data||[];
   },
 
+  async coach_phase_detail({templateId,phaseIdx}) {
+    const {data:tpl} = await sb.from('plan_templates').select('*').eq('id',templateId).single();
+    APP.state.template = tpl;
+    APP.state.phaseIdx = parseInt(phaseIdx)||0;
+  },
+
   async coach_edit_plan({templateId,week}) {
     const [{data:tpl},{data:lib}] = await Promise.all([
       sb.from('plan_templates').select('*').eq('id',templateId).single(),
@@ -793,7 +799,7 @@ VIEWS.coach_plan_detail = ()=>{
   </div>
   <div class="section">
     <div class="section-header"><h2>Phases</h2></div>
-    ${(t.phases||[]).map(p=>`<div class="phase-header"><h3 style="color:${p.color||'var(--primary)'}">${p.name}</h3><div style="font-size:.82rem;color:var(--text2);margin-top:2px">Weeks ${(p.weeks||[]).join(', ')}</div><p style="margin-top:4px;font-size:.85rem">${p.description||''}</p></div>`).join('')}
+    ${(t.phases||[]).map((p,i)=>`<div class="phase-header" style="cursor:pointer" onclick="APP.go('coach_phase_detail',{templateId:'${t.id}',phaseIdx:${i}})"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="color:${p.color||'var(--primary)'};margin:0">${p.name}</h3><span style="color:var(--text3);font-size:1rem">›</span></div><div style="font-size:.82rem;color:var(--text2);margin-top:2px">Weeks ${(p.weeks||[]).join(', ')}</div><p style="margin-top:4px;font-size:.85rem">${p.description||''}</p></div>`).join('')}
   </div>
   ${assignments.length>0?`<div class="section">
     <div class="section-header"><h2>Assigned Athletes</h2></div>
@@ -802,6 +808,36 @@ VIEWS.coach_plan_detail = ()=>{
       <div><div style="font-weight:700">${a.profiles?.name}</div><div style="font-size:.82rem;color:var(--text2)">Started ${new Date(a.start_date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div></div>
     </div>`).join('')}
   </div>`:''}
+</div>`;
+};
+
+VIEWS.coach_phase_detail = ()=>{
+  const {template:t, phaseIdx} = APP.state;
+  if(!t) return `<div class="page"><p>Not found.</p></div>`;
+  const phase = (t.phases||[])[phaseIdx];
+  if(!phase) return `<div class="page"><p>Phase not found.</p></div>`;
+  const phaseWeeks = phase.weeks||[];
+  const workouts = (t.workouts||[]).filter(w=>phaseWeeks.includes(w.week));
+  const byWeek = phaseWeeks.map(wk=>({wk, days:workouts.filter(w=>w.week===wk).sort((a,b)=>a.day-b.day)}));
+  return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<div></div><button class="btn btn-ghost btn-sm" onclick="APP.go('coach_edit_plan',{templateId:'${t.id}',week:${phaseWeeks[0]||1}})">Edit</button></div>
+  <h1 style="color:${phase.color||'var(--primary)'};margin-bottom:4px">${phase.name}</h1>
+  <p style="margin-bottom:4px;font-size:.9rem;color:var(--text2)">Weeks ${phaseWeeks.join(', ')}</p>
+  <p style="margin-bottom:20px;font-size:.9rem">${phase.description||''}</p>
+  ${byWeek.map(({wk,days})=>`
+  <div class="section">
+    <div class="section-header"><h2>Week ${wk}</h2></div>
+    ${days.length===0?`<div class="card"><p style="color:var(--text2);font-size:.85rem">No workouts added yet.</p></div>`:
+      days.map(w=>`<div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-weight:700;color:var(--text2);font-size:.82rem">Day ${w.day}</span>
+          <span class="tag ${typeColor(w.type)}">${w.type}</span>
+        </div>
+        <div style="font-weight:700;margin-bottom:4px">${w.title}</div>
+        ${w.description?`<p style="font-size:.85rem;color:var(--text2);white-space:pre-wrap">${w.description}</p>`:''}
+      </div>`).join('')}
+  </div>`).join('')}
 </div>`;
 };
 

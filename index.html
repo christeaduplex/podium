@@ -136,7 +136,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .2s}
 .hamburger:active{opacity:.6}
 .ham-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5)}
-.ham-menu{position:absolute;top:54px;right:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);min-width:220px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.ham-menu{position:fixed;top:54px;right:16px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);min-width:220px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:301}
 .ham-header{padding:16px;border-bottom:1px solid var(--border);background:var(--card2)}
 .ham-header .name{font-weight:700;font-size:1rem}
 .ham-header .role{font-size:.78rem;color:var(--text2);text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
@@ -182,8 +182,11 @@ const APP = {
     }
     // onAuthStateChange drives all routing
     sb.auth.onAuthStateChange(async (event, session) => {
-      if (APP.view === 'setup_profile') return; // don't interrupt setup
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+      if (APP.view === 'setup_profile' || APP.view === 'set_password') return;
+      if (event === 'PASSWORD_RECOVERY') {
+        APP.user = session.user;
+        await APP._nav('set_password', {}, false);
+      } else if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
         await APP._handleSession(session);
       } else if (event === 'SIGNED_OUT') {
         APP.user = null; APP.profile = null; APP.state = {}; APP.history = [];
@@ -305,30 +308,32 @@ function hamburgerBtn(){
     <button class="hamburger" onclick="openHamburger()" id="ham-btn"><span></span><span></span><span></span></button>
   </div>`;
 }
+function closeHamburger(){
+  document.getElementById('ham-overlay')?.remove();
+  document.getElementById('ham-menu')?.remove();
+}
 function openHamburger(){
   if(document.getElementById('ham-overlay')) return;
   const prof = APP.profile;
   const overlay = document.createElement('div');
   overlay.id='ham-overlay'; overlay.className='ham-overlay';
-  overlay.onclick=()=>overlay.remove();
+  overlay.onclick=closeHamburger;
   const menu = document.createElement('div');
-  menu.className='ham-menu';
-  menu.style.position='fixed'; menu.style.top='54px'; menu.style.right='16px';
+  menu.id='ham-menu'; menu.className='ham-menu';
   menu.innerHTML=`
     <div class="ham-header"><div class="name">${prof?.name||'User'}</div><div class="role">${prof?.role||''}</div></div>
     ${prof?.role==='coach'?`
-    <button class="ham-item" onclick="overlay.remove();APP.go('coach_profile')">${I.person}<span>My Profile</span></button>
-    <button class="ham-item" onclick="overlay.remove();APP.go('coach_library')">${I.library}<span>Workout Library</span></button>
+    <button class="ham-item" onclick="closeHamburger();APP.go('coach_profile')">${I.person}<span>My Profile</span></button>
+    <button class="ham-item" onclick="closeHamburger();APP.go('coach_library')">${I.library}<span>Workout Library</span></button>
     `:`
-    <button class="ham-item" onclick="overlay.remove();APP.go('athlete_profile')">${I.person}<span>My Profile</span></button>
-    <button class="ham-item" onclick="overlay.remove();APP.go('athlete_race_info')">${I.race}<span>Race Info</span></button>
-    <button class="ham-item" onclick="overlay.remove();APP.go('athlete_baseline')">${I.baseline}<span>My Baseline</span></button>
+    <button class="ham-item" onclick="closeHamburger();APP.go('athlete_profile')">${I.person}<span>My Profile</span></button>
+    <button class="ham-item" onclick="closeHamburger();APP.go('athlete_race_info')">${I.race}<span>Race Info</span></button>
+    <button class="ham-item" onclick="closeHamburger();APP.go('athlete_baseline')">${I.baseline}<span>My Baseline</span></button>
     `}
-    <button class="ham-item danger" onclick="overlay.remove();APP.logout()">${I.logout}<span>Sign out</span></button>
+    <button class="ham-item danger" onclick="closeHamburger();APP.logout()">${I.logout}<span>Sign out</span></button>
   `;
   document.body.appendChild(overlay);
   document.body.appendChild(menu);
-  overlay.onclick=()=>{overlay.remove();menu.remove();};
 }
 function avatarLetters(name){return (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
 function phaseForWeek(week){
@@ -535,6 +540,11 @@ const LOADERS = {
     APP.state.ap = data;
   },
 
+  async athlete_edit_profile() {
+    const {data} = await sb.from('athlete_profiles').select('*').eq('id',APP.user.id).maybeSingle();
+    APP.state.ap = data;
+  },
+
   async athlete_race_info() {
     const {data} = await sb.from('athlete_profiles').select('*').eq('id',APP.user.id).maybeSingle();
     APP.state.ap = data;
@@ -568,6 +578,20 @@ VIEWS.login = ()=>`
       <div class="form-group"><label>Email</label><input id="l-email" type="email" placeholder="you@example.com" required autocomplete="email"></div>
       <div class="form-group"><label>Password</label><input id="l-pass" type="password" placeholder="••••••••" required autocomplete="current-password"></div>
       <button type="submit" id="login-btn" class="btn btn-primary btn-full">Sign In</button>
+    </form>
+  </div>
+</div>`;
+
+VIEWS.set_password = ()=>`
+<div class="login-screen">
+  <div><div class="login-logo">Podium<span>.</span></div><p style="color:var(--text2)">Set your password to continue.</p></div>
+  <div class="login-card">
+    <h2 style="margin-bottom:16px">Choose a password</h2>
+    <div id="sp2-err" style="display:none" class="alert alert-error"></div>
+    <form onsubmit="ACTIONS.setPassword(event)">
+      <div class="form-group"><label>New password</label><input id="sp2-pass" type="password" placeholder="Min 8 characters" required minlength="8" autocomplete="new-password"></div>
+      <div class="form-group"><label>Confirm password</label><input id="sp2-confirm" type="password" placeholder="Repeat password" required minlength="8" autocomplete="new-password"></div>
+      <button type="submit" id="sp2-btn" class="btn btn-primary btn-full">Set password & continue</button>
     </form>
   </div>
 </div>`;
@@ -989,7 +1013,7 @@ VIEWS.athlete_today = ()=>{
   return `
 <div class="page">
   <div class="top-bar">
-    <div><small style="color:var(--text2)">Hey ${prof?.name?.split(' ')[0]||'there'} 👋</small><h1>Today</h1></div>
+    <div><div style="font-size:.7rem;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1px">Hey ${prof?.name?.split(' ')[0]||'there'} 👋</div><h1 style="line-height:1">Today</h1></div>
     ${hamburgerBtn()}
   </div>
   ${ap?.race_date ? raceCountdown(ap.race_date) : ''}
@@ -1169,7 +1193,7 @@ VIEWS.athlete_profile = ()=>{
   const prof = APP.profile;
   return `
 <div class="page">
-  <div class="top-bar">${backBtn()}<h1 style="font-size:1.1rem">My Profile</h1><div style="width:40px"></div></div>
+  <div class="top-bar">${backBtn()}<h1 style="font-size:1.1rem">My Profile</h1><button class="btn btn-ghost btn-sm" onclick="APP.go('athlete_edit_profile')">Edit</button></div>
   <div style="text-align:center;padding:24px 0">
     <div class="avatar avatar-lg" style="margin:0 auto 12px">${avatarLetters(prof?.name||'?')}</div>
     <h2>${prof?.name}</h2>
@@ -1180,6 +1204,51 @@ VIEWS.athlete_profile = ()=>{
     ${[['Race Date',ap.race_date?new Date(ap.race_date).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'}):'—'],['Race Format',ap.race_format||'—'],['Level',ap.level||'—'],['Weekly Running',ap.weekly_run||'—'],['Strength Exp',ap.strength_exp||'—'],['HYROX Exp',ap.hyrox_exp||'—'],['Injuries',ap.injuries||'None'],['Available Days',(ap.available_days||[]).join(', ')||'—']].map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.9rem"><span style="color:var(--text2)">${k}</span><span>${v}</span></div>`).join('')}
   </div>`:'<div class="card"><p>No profile data yet.</p></div>'}
   <button class="btn btn-danger btn-full" style="margin-top:16px" onclick="APP.logout()">Sign out</button>
+</div>`;
+};
+
+VIEWS.athlete_edit_profile = ()=>{
+  const {ap} = APP.state;
+  const prof = APP.profile;
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const selDays = ap?.available_days||[];
+  return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<h1 style="font-size:1.1rem">Edit Profile</h1><div style="width:40px"></div></div>
+  <form onsubmit="ACTIONS.saveAthleteProfile(event)" style="margin-top:8px">
+    <div class="section">
+      <div class="section-header"><h2>Personal</h2></div>
+      <div class="card">
+        <div class="form-group"><label>Name</label><input id="ep-name" value="${prof?.name||''}" required></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><h2>Race</h2></div>
+      <div class="card">
+        <div class="form-group"><label>Race date</label><input id="ep-date" type="date" value="${ap?.race_date||''}"></div>
+        <div class="form-group"><label>Race format</label><select id="ep-format"><option ${ap?.race_format==='Solo'?'selected':''}>Solo</option><option ${ap?.race_format==='Doubles'?'selected':''}>Doubles</option><option ${ap?.race_format==='Relay'?'selected':''}>Relay</option></select></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><h2>Background</h2></div>
+      <div class="card">
+        <div class="form-group"><label>Experience level</label><select id="ep-level"><option ${ap?.level==='Beginner'?'selected':''}>Beginner</option><option ${ap?.level==='Intermediate'?'selected':''}>Intermediate</option><option ${ap?.level==='Advanced'?'selected':''}>Advanced</option></select></div>
+        <div class="form-group"><label>Weekly running</label><input id="ep-run" placeholder="e.g. 20–30km/week" value="${ap?.weekly_run||''}"></div>
+        <div class="form-group"><label>Strength experience</label><input id="ep-strength" placeholder="e.g. 2 years gym" value="${ap?.strength_exp||''}"></div>
+        <div class="form-group"><label>HYROX experience</label><input id="ep-hyrox" placeholder="e.g. 1 race completed" value="${ap?.hyrox_exp||''}"></div>
+        <div class="form-group"><label>Injuries / limitations</label><input id="ep-injuries" placeholder="None, or describe" value="${ap?.injuries||'None'}"></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><h2>Available days</h2></div>
+      <div class="card">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${days.map(d=>`<button type="button" id="day-${d}" class="btn ${selDays.includes(d)?'btn-primary':'btn-secondary'} btn-sm" onclick="this.classList.toggle('btn-primary');this.classList.toggle('btn-secondary')">${d}</button>`).join('')}
+        </div>
+      </div>
+    </div>
+    <button type="submit" id="ep-save-btn" class="btn btn-primary btn-full" style="margin-top:8px">Save changes</button>
+  </form>
 </div>`;
 };
 
@@ -1375,8 +1444,8 @@ const ACTIONS = {
     btn.disabled=true; btn.textContent='Saving…';
     const name = document.getElementById('sp-name').value.trim();
     const pass = document.getElementById('sp-pass').value;
-    // Set password
-    const {error:pe} = await sb.auth.updateUser({password:pass});
+    // Set password + display name in auth metadata
+    const {error:pe} = await sb.auth.updateUser({password:pass, data:{name}});
     if(pe){ showToast('Error setting password. Try again.',true); btn.disabled=false; btn.textContent='Complete setup'; return; }
     // Create profiles row
     const {error:prof_err} = await sb.from('profiles').insert({id:APP.user.id,name,email:APP.user.email,role:'athlete'});
@@ -1395,6 +1464,46 @@ const ACTIONS = {
     APP.profile = {id:APP.user.id,name,email:APP.user.email,role:'athlete'};
     showToast('Profile set up ✓');
     await APP._nav('athlete_today',{},false);
+  },
+
+  async setPassword(e){
+    e.preventDefault();
+    const btn = document.getElementById('sp2-btn');
+    const err = document.getElementById('sp2-err');
+    const pass = document.getElementById('sp2-pass').value;
+    const confirm = document.getElementById('sp2-confirm').value;
+    if(pass !== confirm){ err.textContent='Passwords do not match.'; err.style.display='block'; return; }
+    btn.disabled=true; btn.textContent='Saving…';
+    const {error} = await sb.auth.updateUser({password:pass});
+    if(error){ err.textContent=error.message; err.style.display='block'; btn.disabled=false; btn.textContent='Set password & continue'; return; }
+    showToast('Password set ✓');
+    await APP._handleSession((await sb.auth.getSession()).data.session);
+  },
+
+  async saveAthleteProfile(e){
+    e.preventDefault();
+    const btn = document.getElementById('ep-save-btn');
+    btn.disabled=true; btn.textContent='Saving…';
+    const name = document.getElementById('ep-name').value.trim();
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].filter(d=>document.getElementById('day-'+d)?.classList.contains('btn-primary'));
+    const {error:pe} = await sb.from('profiles').update({name}).eq('id',APP.user.id);
+    if(pe){ showToast('Error saving name.',true); btn.disabled=false; btn.textContent='Save changes'; return; }
+    await sb.auth.updateUser({data:{name}});
+    const {error:ae} = await sb.from('athlete_profiles').upsert({
+      id: APP.user.id,
+      race_date: document.getElementById('ep-date').value||null,
+      race_format: document.getElementById('ep-format').value,
+      level: document.getElementById('ep-level').value,
+      weekly_run: document.getElementById('ep-run').value,
+      strength_exp: document.getElementById('ep-strength').value,
+      hyrox_exp: document.getElementById('ep-hyrox').value,
+      injuries: document.getElementById('ep-injuries').value,
+      available_days: days,
+    });
+    if(ae){ showToast('Error saving profile.',true); btn.disabled=false; btn.textContent='Save changes'; return; }
+    APP.profile = {...APP.profile, name};
+    showToast('Profile saved ✓');
+    APP.back();
   },
 
   async inviteAthlete(e){

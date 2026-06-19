@@ -157,6 +157,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // ============================================================
 const SUPABASE_URL = 'https://wbxvjimgrmnqcwdqfhbr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieHZqaW1ncm1ucWN3ZHFmaGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODMwMTUsImV4cCI6MjA5NzE1OTAxNX0.IWdg6MRzTEX4AN_Yw6bx5HSB6-EeRXKYbqDrs0EA2sQ';
+// Capture hash BEFORE Supabase JS clears it — used to detect invite links
+const INITIAL_HASH = window.location.hash;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ============================================================
@@ -186,7 +188,16 @@ const APP = {
       if (event === 'PASSWORD_RECOVERY') {
         APP.user = session.user;
         await APP._nav('set_password', {}, false);
-      } else if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+      } else if (event === 'SIGNED_IN') {
+        // Detect invite link — use INITIAL_HASH because Supabase clears window.location.hash before this fires
+        const isInvite = INITIAL_HASH.includes('type=invite');
+        if (isInvite) {
+          APP.user = session.user;
+          await APP._nav('setup_profile', {}, false);
+        } else {
+          await APP._handleSession(session);
+        }
+      } else if (event === 'INITIAL_SESSION') {
         await APP._handleSession(session);
       } else if (event === 'SIGNED_OUT') {
         APP.user = null; APP.profile = null; APP.state = {}; APP.history = [];
@@ -199,6 +210,9 @@ const APP = {
     if (!session) { await this._nav('home', {}, false); return; }
     this.user = session.user;
     const {data: prof} = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+    // After the async fetch, a more specific flow (invite/password-reset) may have taken over.
+    // If so, don't clobber it.
+    if (this.view === 'setup_profile' || this.view === 'set_password') return;
     if (!prof) { await this._nav('setup_profile', {}, false); return; }
     this.profile = prof;
     const dest = prof.role === 'coach' ? 'coach_dashboard' : 'athlete_today';
@@ -1448,10 +1462,10 @@ const ACTIONS = {
     const {error:pe} = await sb.auth.updateUser({password:pass, data:{name}});
     if(pe){ showToast('Error setting password. Try again.',true); btn.disabled=false; btn.textContent='Complete setup'; return; }
     // Create profiles row
-    const {error:prof_err} = await sb.from('profiles').insert({id:APP.user.id,name,email:APP.user.email,role:'athlete'});
+    const {error:prof_err} = await sb.from('profiles').upsert({id:APP.user.id,name,email:APP.user.email,role:'athlete'});
     if(prof_err){ showToast('Error saving profile.',true); btn.disabled=false; btn.textContent='Complete setup'; return; }
     // Create athlete_profiles row
-    await sb.from('athlete_profiles').insert({
+    await sb.from('athlete_profiles').upsert({
       id: APP.user.id,
       race_date: document.getElementById('sp-date').value,
       race_format: document.getElementById('sp-format').value,

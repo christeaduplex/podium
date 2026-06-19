@@ -210,9 +210,6 @@ const APP = {
     if (!session) { await this._nav('home', {}, false); return; }
     this.user = session.user;
     const {data: prof} = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-    // After the async fetch, a more specific flow (invite/password-reset) may have taken over.
-    // If so, don't clobber it.
-    if (this.view === 'setup_profile' || this.view === 'set_password') return;
     if (!prof) { await this._nav('setup_profile', {}, false); return; }
     this.profile = prof;
     const dest = prof.role === 'coach' ? 'coach_dashboard' : 'athlete_today';

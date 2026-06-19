@@ -1461,7 +1461,7 @@ const ACTIONS = {
     const {error:pe} = await sb.auth.updateUser({password:pass, data:{name}});
     if(pe){ showToast('Error setting password. Try again.',true); btn.disabled=false; btn.textContent='Complete setup'; return; }
     // Create profiles row
-    const {error:prof_err} = await sb.from('profiles').upsert({id:APP.user.id,name,email:APP.user.email,role:'athlete'});
+    const {error:prof_err} = await sb.from('profiles').upsert({id:APP.user.id,name,role:'athlete'});
     if(prof_err){ showToast('Error saving profile.',true); btn.disabled=false; btn.textContent='Complete setup'; return; }
     // Create athlete_profiles row
     await sb.from('athlete_profiles').upsert({

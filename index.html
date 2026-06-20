@@ -649,7 +649,7 @@ VIEWS.coach_dashboard = ()=>{
 <div class="page">
   <div class="top-bar"><h1>Podium<span style="color:var(--primary)">.</span></h1>${hamburgerBtn()}</div>
   <div class="section">
-    <div class="section-header"><h2>Athletes</h2><button class="btn btn-ghost btn-sm" onclick="APP.tab('coach_athletes')">${I.plus} Invite</button></div>
+    <div class="section-header"><h2>Athletes</h2><button class="btn btn-ghost btn-sm" onclick="APP.go('coach_invite_athlete')">${I.plus} Invite</button></div>
     ${athletes.length===0?`<div class="card"><p>No athletes yet. Use the button above to invite your first athlete.</p></div>`:''}
     ${athletes.map(a=>{
       const asgn = a.assignments?.[0];

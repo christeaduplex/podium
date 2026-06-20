@@ -182,38 +182,59 @@ const APP = {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(()=>{});
     }
-    // onAuthStateChange drives all routing
-    sb.auth.onAuthStateChange(async (event, session) => {
-      if (APP.view === 'setup_profile' || APP.view === 'set_password') return;
-      if (event === 'PASSWORD_RECOVERY') {
-        APP.user = session.user;
-        await APP._nav('set_password', {}, false);
-      } else if (event === 'SIGNED_IN') {
-        // Detect invite link — use INITIAL_HASH because Supabase clears window.location.hash before this fires
-        const isInvite = INITIAL_HASH.includes('type=invite');
-        if (isInvite) {
-          APP.user = session.user;
-          await APP._nav('setup_profile', {}, false);
-        } else {
-          await APP._handleSession(session);
-        }
-      } else if (event === 'INITIAL_SESSION') {
-        await APP._handleSession(session);
-      } else if (event === 'SIGNED_OUT') {
-        APP.user = null; APP.profile = null; APP.state = {}; APP.history = [];
-        await APP._nav('home', {}, false);
-      }
+    // onAuthStateChange drives all routing. Supabase invokes this callback while
+    // holding its auth lock (navigator.locks); awaiting any sb.* call inside the
+    // callback deadlocks, because those calls need the same lock. Defer the work
+    // to a fresh task so the callback returns and the lock is released first.
+    sb.auth.onAuthStateChange((event, session) => {
+      setTimeout(() => { APP._routeAuth(event, session); }, 0);
     });
   },
 
+  async _routeAuth(event, session) {
+    if (this.view === 'setup_profile' || this.view === 'set_password') return;
+    if (event === 'PASSWORD_RECOVERY') {
+      this.user = session.user;
+      await this._nav('set_password', {}, false);
+    } else if (event === 'SIGNED_IN') {
+      // Detect invite link — use INITIAL_HASH because Supabase clears window.location.hash before this fires
+      const isInvite = INITIAL_HASH.includes('type=invite');
+      if (isInvite) {
+        this.user = session.user;
+        await this._nav('setup_profile', {}, false);
+      } else {
+        await this._handleSession(session);
+      }
+    } else if (event === 'INITIAL_SESSION') {
+      await this._handleSession(session);
+    } else if (event === 'SIGNED_OUT') {
+      this.user = null; this.profile = null; this.state = {}; this.history = [];
+      await this._nav('home', {}, false);
+    }
+  },
+
   async _handleSession(session) {
-    if (!session) { await this._nav('home', {}, false); return; }
+    if (!session) { localStorage.removeItem('podium_prof'); await this._nav('home', {}, false); return; }
     this.user = session.user;
+    // Use cached profile for instant routing — avoids a DB round-trip on every login
+    const cached = (() => { try { return JSON.parse(localStorage.getItem('podium_prof')||'null'); } catch(e){ return null; } })();
+    if (cached && cached.id === session.user.id) {
+      if (this.view === 'setup_profile' || this.view === 'set_password') return;
+      this.profile = cached;
+      const dest = cached.role === 'coach' ? 'coach_dashboard' : 'athlete_today';
+      if (this.view !== dest) await this._nav(dest, {}, false);
+      // Refresh cache silently in background
+      sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle()
+        .then(({data}) => { if (data) localStorage.setItem('podium_prof', JSON.stringify(data)); });
+      return;
+    }
+    // No cache: fetch profile and store it
     const {data: prof} = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
     // After async fetch, bail if a more specific flow (invite/password-reset) has taken over
     if (this.view === 'setup_profile' || this.view === 'set_password') return;
     if (!prof) { await this._nav('setup_profile', {}, false); return; }
     this.profile = prof;
+    localStorage.setItem('podium_prof', JSON.stringify(prof));
     const dest = prof.role === 'coach' ? 'coach_dashboard' : 'athlete_today';
     if (this.view !== dest) await this._nav(dest, {}, false);
   },
@@ -261,7 +282,7 @@ const APP = {
   },
   closeModal() { document.getElementById('modal-root')?.remove(); },
 
-  async logout() { await sb.auth.signOut(); },
+  async logout() { localStorage.removeItem('podium_prof'); await sb.auth.signOut(); },
 
   getAthleteWeek(asgn) {
     if(!asgn) return 1;
@@ -635,7 +656,7 @@ VIEWS.coach_dashboard = ()=>{
 <div class="page">
   <div class="top-bar"><h1>Podium<span style="color:var(--primary)">.</span></h1>${hamburgerBtn()}</div>
   <div class="section">
-    <div class="section-header"><h2>Athletes</h2><button class="btn btn-ghost btn-sm" onclick="APP.tab('coach_athletes')">${I.plus} Invite</button></div>
+    <div class="section-header"><h2>Athletes</h2><button class="btn btn-ghost btn-sm" onclick="APP.go('coach_invite_athlete')">${I.plus} Invite</button></div>
     ${athletes.length===0?`<div class="card"><p>No athletes yet. Use the button above to invite your first athlete.</p></div>`:''}
     ${athletes.map(a=>{
       const asgn = a.assignments?.[0];
@@ -1489,7 +1510,8 @@ const ACTIONS = {
       available_days: ['Mon','Tue','Thu','Fri','Sat'],
       equipment: 'Full gym',
     });
-    APP.profile = {id:APP.user.id,name,email:APP.user.email,role:'athlete'};
+    APP.profile = {id:APP.user.id,name,role:'athlete'};
+    localStorage.setItem('podium_prof', JSON.stringify(APP.profile));
     showToast('Profile set up ✓');
     await APP._nav('athlete_today',{},false);
   },

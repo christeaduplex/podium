@@ -385,17 +385,14 @@ function selectCompletion(yes){
 // ============================================================
 const LOADERS = {
   async coach_dashboard() {
-    const [athRes, tplRes] = await Promise.all([
+    const [athRes, tplRes, logsRes] = await Promise.all([
       sb.from('profiles').select('*, athlete_profiles(*), assignments(id, start_date, template_id, plan_templates(name, length_weeks))').eq('role','athlete').order('name'),
       sb.from('plan_templates').select('id,name').order('name'),
+      sb.from('workout_logs').select('*, profiles!athlete_id(name,id)').eq('coach_reviewed',false).order('completed_at',{ascending:false}).limit(30),
     ]);
     APP.state.athletes = athRes.data||[];
     APP.state.templates = tplRes.data||[];
-    const ids = APP.state.athletes.map(a=>a.id);
-    if(ids.length){
-      const {data:logs} = await sb.from('workout_logs').select('*, profiles!athlete_id(name,id)').in('athlete_id',ids).eq('coach_reviewed',false).order('completed_at',{ascending:false}).limit(30);
-      APP.state.unreviewedLogs = logs||[];
-    } else { APP.state.unreviewedLogs=[]; }
+    APP.state.unreviewedLogs = logsRes.data||[];
   },
 
   async coach_athletes() {

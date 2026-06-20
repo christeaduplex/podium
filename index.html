@@ -182,28 +182,35 @@ const APP = {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(()=>{});
     }
-    // onAuthStateChange drives all routing
-    sb.auth.onAuthStateChange(async (event, session) => {
-      if (APP.view === 'setup_profile' || APP.view === 'set_password') return;
-      if (event === 'PASSWORD_RECOVERY') {
-        APP.user = session.user;
-        await APP._nav('set_password', {}, false);
-      } else if (event === 'SIGNED_IN') {
-        // Detect invite link — use INITIAL_HASH because Supabase clears window.location.hash before this fires
-        const isInvite = INITIAL_HASH.includes('type=invite');
-        if (isInvite) {
-          APP.user = session.user;
-          await APP._nav('setup_profile', {}, false);
-        } else {
-          await APP._handleSession(session);
-        }
-      } else if (event === 'INITIAL_SESSION') {
-        await APP._handleSession(session);
-      } else if (event === 'SIGNED_OUT') {
-        APP.user = null; APP.profile = null; APP.state = {}; APP.history = [];
-        await APP._nav('home', {}, false);
-      }
+    // onAuthStateChange drives all routing. Supabase invokes this callback while
+    // holding its auth lock (navigator.locks); awaiting any sb.* call inside the
+    // callback deadlocks, because those calls need the same lock. Defer the work
+    // to a fresh task so the callback returns and the lock is released first.
+    sb.auth.onAuthStateChange((event, session) => {
+      setTimeout(() => { APP._routeAuth(event, session); }, 0);
     });
+  },
+
+  async _routeAuth(event, session) {
+    if (this.view === 'setup_profile' || this.view === 'set_password') return;
+    if (event === 'PASSWORD_RECOVERY') {
+      this.user = session.user;
+      await this._nav('set_password', {}, false);
+    } else if (event === 'SIGNED_IN') {
+      // Detect invite link — use INITIAL_HASH because Supabase clears window.location.hash before this fires
+      const isInvite = INITIAL_HASH.includes('type=invite');
+      if (isInvite) {
+        this.user = session.user;
+        await this._nav('setup_profile', {}, false);
+      } else {
+        await this._handleSession(session);
+      }
+    } else if (event === 'INITIAL_SESSION') {
+      await this._handleSession(session);
+    } else if (event === 'SIGNED_OUT') {
+      this.user = null; this.profile = null; this.state = {}; this.history = [];
+      await this._nav('home', {}, false);
+    }
   },
 
   async _handleSession(session) {

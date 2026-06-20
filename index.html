@@ -207,13 +207,27 @@ const APP = {
   },
 
   async _handleSession(session) {
-    if (!session) { await this._nav('home', {}, false); return; }
+    if (!session) { localStorage.removeItem('podium_prof'); await this._nav('home', {}, false); return; }
     this.user = session.user;
+    // Use cached profile for instant routing — avoids a DB round-trip on every login
+    const cached = (() => { try { return JSON.parse(localStorage.getItem('podium_prof')||'null'); } catch(e){ return null; } })();
+    if (cached && cached.id === session.user.id) {
+      if (this.view === 'setup_profile' || this.view === 'set_password') return;
+      this.profile = cached;
+      const dest = cached.role === 'coach' ? 'coach_dashboard' : 'athlete_today';
+      if (this.view !== dest) await this._nav(dest, {}, false);
+      // Refresh cache silently in background
+      sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle()
+        .then(({data}) => { if (data) localStorage.setItem('podium_prof', JSON.stringify(data)); });
+      return;
+    }
+    // No cache: fetch profile and store it
     const {data: prof} = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
     // After async fetch, bail if a more specific flow (invite/password-reset) has taken over
     if (this.view === 'setup_profile' || this.view === 'set_password') return;
     if (!prof) { await this._nav('setup_profile', {}, false); return; }
     this.profile = prof;
+    localStorage.setItem('podium_prof', JSON.stringify(prof));
     const dest = prof.role === 'coach' ? 'coach_dashboard' : 'athlete_today';
     if (this.view !== dest) await this._nav(dest, {}, false);
   },
@@ -261,7 +275,7 @@ const APP = {
   },
   closeModal() { document.getElementById('modal-root')?.remove(); },
 
-  async logout() { await sb.auth.signOut(); },
+  async logout() { localStorage.removeItem('podium_prof'); await sb.auth.signOut(); },
 
   getAthleteWeek(asgn) {
     if(!asgn) return 1;
@@ -1489,7 +1503,8 @@ const ACTIONS = {
       available_days: ['Mon','Tue','Thu','Fri','Sat'],
       equipment: 'Full gym',
     });
-    APP.profile = {id:APP.user.id,name,email:APP.user.email,role:'athlete'};
+    APP.profile = {id:APP.user.id,name,role:'athlete'};
+    localStorage.setItem('podium_prof', JSON.stringify(APP.profile));
     showToast('Profile set up ✓');
     await APP._nav('athlete_today',{},false);
   },

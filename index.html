@@ -568,6 +568,22 @@ const LOADERS = {
     APP.state.logs = logs||[];
   },
 
+  async athlete_day_detail({week,day}){
+    const uid = APP.user.id;
+    week = parseInt(week); day = parseInt(day);
+    const {data:asgn} = await sb.from('assignments').select('*, plan_templates(*)').eq('athlete_id',uid).maybeSingle();
+    APP.state.assignment = asgn;
+    APP.state.dWeek = week; APP.state.dDay = day;
+    if(!asgn) return;
+    APP.state.currentWeek = APP.getAthleteWeek(asgn);
+    const mods = asgn.modifications||[];
+    const base = (asgn.plan_templates?.workouts||[]).find(w=>w.week===week&&w.day===day);
+    const mod = mods.find(m=>m.week===week&&m.day===day);
+    APP.state.workout = mod?{...mod,_coachEdited:true}:base;
+    const {data:log} = await sb.from('workout_logs').select('*').eq('athlete_id',uid).eq('assignment_id',asgn.id).eq('week',week).eq('day',day).maybeSingle();
+    APP.state.dayLog = log;
+  },
+
   async athlete_progress() {
     const uid = APP.user.id;
     const [{data:logs},{data:checkins}] = await Promise.all([
@@ -1125,7 +1141,7 @@ VIEWS.athlete_today = ()=>{
       <h2 style="margin-bottom:6px">${todayWorkout.title}</h2>
       <p style="font-size:.9rem;margin-bottom:12px">${todayWorkout.description}</p>
       ${(todayWorkout.exercises||[]).map(ex=>`<div style="padding:7px 0;border-top:1px solid var(--border);font-size:.9rem"><span style="font-weight:600">${ex.name}</span>${ex.detail?` <span style="color:var(--text2)">· ${ex.detail}</span>`:''}${ex.notes?`<div style="font-size:.8rem;color:var(--text3)">${ex.notes}</div>`:''}</div>`).join('')}
-      ${todayLog?`<div style="margin-top:14px;background:rgba(0,208,132,.05);border:1px solid rgba(0,208,132,.2);border-radius:8px;padding:12px"><div style="color:var(--success);font-weight:700;margin-bottom:4px">✓ Completed · RPE ${todayLog.rpe||'—'}</div>${todayLog.feedback?`<div style="font-size:.85rem;color:var(--text2)">${todayLog.feedback}</div>`:''}</div>`:`<button class="btn btn-primary btn-full" style="margin-top:14px" onclick="APP.openModal(MODALS.logWorkout(${currentWeek},${currentDay},'${asgn.id}'))">Log this workout</button>`}
+      ${todayLog?`<div style="margin-top:14px;background:rgba(0,208,132,.05);border:1px solid rgba(0,208,132,.2);border-radius:8px;padding:12px"><div style="color:var(--success);font-weight:700;margin-bottom:4px">✓ Completed · RPE ${todayLog.rpe||'—'}</div>${todayLog.feedback?`<div style="font-size:.85rem;color:var(--text2)">${todayLog.feedback}</div>`:''}</div>`:`<button class="btn btn-primary btn-full" style="margin-top:14px" onclick="APP.go('athlete_day_detail',{week:${currentWeek},day:${currentDay}})">Log this workout</button>`}
     </div>`:`<div class="card"><h3 style="color:var(--text2)">${new Date().toLocaleDateString('en-AU',{weekday:'long'})}</h3><p style="margin-top:4px">No training scheduled today. Rest and recover.</p></div>`}
   </div>
   ${partner?`<div class="section">
@@ -1174,7 +1190,7 @@ VIEWS.athlete_plan = ()=>{
   ${dayWorkouts.map(w=>{
     const log = (logs||[]).find(l=>l.week===w.week&&l.day===w.day);
     const isToday = viewWeek===currentWeek && w.day===APP.getTodayDayIndex();
-    return `<div class="workout-day ${log?.completed?'completed':''} ${isToday?'today':''}">
+    return `<div class="workout-day ${log?.completed?'completed':''} ${isToday?'today':''}" onclick="APP.go('athlete_day_detail',{week:${w.week},day:${w.day}})">
       <div class="day-header">
         <div>
           <div style="font-weight:700">Day ${w.day} · ${w.title}</div>
@@ -1187,6 +1203,42 @@ VIEWS.athlete_plan = ()=>{
   }).join('')}
 </div>
 ${athleteNav('athlete_plan')}`;
+};
+
+VIEWS.athlete_day_detail = ()=>{
+  const {assignment:asgn, workout:w, dayLog:log, dWeek:week, dDay:day, currentWeek} = APP.state;
+  if(!asgn || !w) return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<h1 style="font-size:1.1rem">Workout</h1><div style="width:40px"></div></div>
+  <div class="empty" style="padding-top:60px"><div class="empty-icon">📋</div><h3>No workout</h3><p>Nothing scheduled for week ${week} day ${day}.</p></div>
+</div>`;
+  const isToday = week===currentWeek && day===APP.getTodayDayIndex();
+  return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<div style="font-size:.85rem;color:var(--text2)">Week ${week} · Day ${day}</div><div style="width:40px"></div></div>
+  <div style="display:flex;align-items:center;gap:8px;margin:8px 0 10px">
+    ${isToday?'<span class="tag tag-yellow">Today</span>':''}
+    <span class="tag ${typeColor(w.type)}">${w.type}</span>
+  </div>
+  ${w._coachEdited?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:.8rem;color:var(--accent);font-weight:600">${I.edit} Updated by coach</div>`:''}
+  <h1 style="margin-bottom:6px">${w.title}</h1>
+  ${w.description?`<p style="font-size:.9rem;margin-bottom:14px">${w.description}</p>`:''}
+  ${(w.exercises||[]).length?`<div class="card" style="margin-bottom:20px;padding-top:4px">${(w.exercises||[]).map(ex=>`<div style="padding:8px 0;border-top:1px solid var(--border);font-size:.9rem"><span style="font-weight:600">${ex.name}</span>${ex.detail?` <span style="color:var(--text2)">· ${ex.detail}</span>`:''}${ex.notes?`<div style="font-size:.8rem;color:var(--text3)">${ex.notes}</div>`:''}</div>`).join('')}</div>`:''}
+  ${log?`
+  <div style="background:rgba(0,208,132,.05);border:1px solid rgba(0,208,132,.2);border-radius:10px;padding:14px;margin-bottom:14px">
+    <div style="color:var(--success);font-weight:700;margin-bottom:4px">${log.completed?'✓ Completed':'✗ Skipped'}${log.rpe?` · RPE ${log.rpe}`:''}</div>
+    ${log.feedback?`<div style="font-size:.85rem;color:var(--text2)">${log.feedback}</div>`:''}
+    ${log.adjustment_requested?`<div style="margin-top:8px;font-size:.8rem;color:var(--accent);font-weight:600">${I.flag} Adjustment requested</div>`:''}
+  </div>
+  <button class="btn btn-ghost btn-full" style="margin-bottom:16px" onclick="document.getElementById('log-form-wrap').style.display='block';this.style.display='none'">Edit log</button>`:''}
+  <div id="log-form-wrap" style="display:${log?'none':'block'}">
+    <div class="section-header" style="margin-bottom:12px"><h2 style="font-size:1rem">Log this workout</h2></div>
+    <form onsubmit="ACTIONS.logWorkout(event,${week},${day},'${asgn.id}')">
+      ${logFormBody(log)}
+      <button type="submit" class="btn btn-primary btn-full">Save log</button>
+    </form>
+  </div>
+</div>`;
 };
 
 VIEWS.athlete_progress = ()=>{
@@ -1370,6 +1422,41 @@ VIEWS.athlete_baseline = ()=>{
 };
 
 // ============================================================
+// SHARED FORM BODIES
+// ============================================================
+// Reused by the logWorkout modal and the athlete_day_detail page.
+// Optional `log` prefills the fields when editing an existing log.
+function logFormBody(log){
+  const c = log ? (log.completed?'true':'false') : '';
+  return `
+  <div class="form-group">
+    <label>Did you complete this workout?</label>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button type="button" class="btn ${c==='true'?'btn-primary':'btn-secondary'}" id="comp-yes" onclick="selectCompletion(true)">✓ Yes</button>
+      <button type="button" class="btn ${c==='false'?'btn-primary':'btn-secondary'}" id="comp-no" onclick="selectCompletion(false)">✗ Skipped</button>
+    </div>
+    <input type="hidden" id="log-completed" value="${c}">
+  </div>
+  <div class="form-group">
+    <label>RPE (Rate of Perceived Exertion)</label>
+    <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--text2);margin-bottom:6px"><span>Easy</span><span>Max effort</span></div>
+    <div class="rpe-scale" id="log-rpe-scale">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button type="button" class="rpe-btn ${log&&String(log.rpe)===String(n)?'selected':''}" onclick="selectScale('log-rpe',${n},'log-rpe-scale')">${n}</button>`).join('')}</div>
+    <input type="hidden" id="log-rpe" value="${log?.rpe||''}">
+  </div>
+  <div class="form-group"><label>Notes for your coach</label><textarea id="log-feedback" placeholder="How did this session feel? Anything your coach should know?">${log?.feedback||''}</textarea></div>
+  <div class="form-group"><label>Next-day soreness / notes</label><textarea id="log-soreness" placeholder="Record after you wake up tomorrow (optional)">${log?.next_day_soreness||''}</textarea></div>
+  <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600">
+      <input type="checkbox" id="log-adj-req" ${log?.adjustment_requested?'checked':''} onchange="document.getElementById('adj-note-wrap').style.display=this.checked?'block':'none'" style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0">
+      <span>Request adjustment from coach</span>
+    </label>
+    <div id="adj-note-wrap" style="display:${log?.adjustment_requested?'block':'none'};margin-top:10px">
+      <textarea id="log-adj-note" placeholder="What would you like changed? Be specific." style="font-size:.88rem">${log?.adjustment_note||''}</textarea>
+    </div>
+  </div>`;
+}
+
+// ============================================================
 // MODALS
 // ============================================================
 const MODALS = {
@@ -1378,32 +1465,7 @@ const MODALS = {
 <h2 style="margin-bottom:4px">Log Workout</h2>
 <p style="margin-bottom:20px">Week ${week} · Day ${day}</p>
 <form onsubmit="ACTIONS.logWorkout(event,${week},${day},'${asgnId}')">
-  <div class="form-group">
-    <label>Did you complete this workout?</label>
-    <div style="display:flex;gap:10px;margin-top:6px">
-      <button type="button" class="btn btn-secondary" id="comp-yes" onclick="selectCompletion(true)">✓ Yes</button>
-      <button type="button" class="btn btn-secondary" id="comp-no" onclick="selectCompletion(false)">✗ Skipped</button>
-    </div>
-    <input type="hidden" id="log-completed">
-  </div>
-  <div class="form-group">
-    <label>RPE (Rate of Perceived Exertion)</label>
-    <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--text2);margin-bottom:6px"><span>Easy</span><span>Max effort</span></div>
-    <div class="rpe-scale" id="log-rpe-scale">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button type="button" class="rpe-btn" onclick="selectScale('log-rpe',${n},'log-rpe-scale')">${n}</button>`).join('')}</div>
-    <input type="hidden" id="log-rpe">
-  </div>
-  <div class="form-group"><label>How did it go?</label><textarea id="log-feedback" placeholder="How did this session feel? Any notes for your coach?"></textarea></div>
-  <div class="form-group"><label>Next-day soreness / notes</label><textarea id="log-soreness" placeholder="Record after you wake up tomorrow (optional)"></textarea></div>
-  <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600">
-      <input type="checkbox" id="log-adj-req" style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0">
-      <span>Request adjustment from coach</span>
-    </label>
-    <div id="adj-note-wrap" style="display:none;margin-top:10px">
-      <textarea id="log-adj-note" placeholder="What would you like changed? Be specific." style="font-size:.88rem"></textarea>
-    </div>
-  </div>
-  <script>document.getElementById('log-adj-req').onchange=function(){document.getElementById('adj-note-wrap').style.display=this.checked?'block':'none'};<\/script>
+  ${logFormBody()}
   <button type="submit" class="btn btn-primary btn-full">Save Log</button>
 </form>`;
   },
@@ -1707,9 +1769,11 @@ const ACTIONS = {
       coach_reviewed: false,
     },{onConflict:'athlete_id,assignment_id,week,day'});
     if(error){ showToast('Error saving log.',true); return; }
-    APP.closeModal();
     showToast('Workout logged ✓');
-    await APP.tab('athlete_today');
+    const modal = document.getElementById('modal-root');
+    if(modal){ APP.closeModal(); await APP.tab('athlete_today'); }
+    else if(APP.history.length){ await APP.back(); }
+    else { await APP.tab('athlete_today'); }
   },
 
   async submitCheckin(e){

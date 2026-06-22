@@ -432,7 +432,7 @@ function selectCompletion(yes){
 const LOADERS = {
   async coach_dashboard() {
     const [athRes, tplRes, logsRes] = await Promise.all([
-      sb.from('profiles').select('*, athlete_profiles(*), assignments(id, start_date, template_id, plan_templates(name, length_weeks))').eq('role','athlete').order('name'),
+      sb.from('profiles').select('*, athlete_profiles(*), assignments(id, start_date, template_id, plan_templates(name, length_weeks, format))').eq('role','athlete').order('name'),
       sb.from('plan_templates').select('id,name').order('name'),
       sb.from('workout_logs').select('*, profiles!athlete_id(name,id)').eq('coach_reviewed',false).order('completed_at',{ascending:false}).limit(30),
     ]);
@@ -442,7 +442,7 @@ const LOADERS = {
   },
 
   async coach_athletes() {
-    const {data} = await sb.from('profiles').select('*, athlete_profiles(*), assignments(id,start_date,plan_templates(name,length_weeks))').eq('role','athlete').order('name');
+    const {data} = await sb.from('profiles').select('*, athlete_profiles(*), assignments(id,start_date,plan_templates(name,length_weeks,format))').eq('role','athlete').order('name');
     APP.state.athletes = data||[];
   },
 
@@ -719,12 +719,13 @@ VIEWS.coach_dashboard = ()=>{
     ${athletes.map(a=>{
       const asgn = a.assignments?.[0];
       const ap = a.athlete_profiles;
+      const fmt = asgn?.plan_templates?.format || ap?.race_format;
       const week = asgn ? APP.getAthleteWeek(asgn) : null;
       return `<div class="card card-row" onclick="APP.go('coach_athlete_detail',{athleteId:'${a.id}'})" style="cursor:pointer">
         <div class="avatar">${avatarLetters(a.name)}</div>
         <div style="flex:1">
           <div style="font-weight:700">${a.name}</div>
-          <div style="font-size:.82rem;color:var(--text2)">${ap?.race_format||'Solo'} · ${ap?.level||'—'}</div>
+          <div style="font-size:.82rem;color:var(--text2)">${fmt||'Solo'} · ${ap?.level||'—'}</div>
           ${asgn?`<div style="font-size:.78rem;color:var(--text2);margin-top:2px">Week ${week} of ${asgn.plan_templates?.length_weeks||20}</div>`:`<div style="font-size:.78rem;color:var(--accent);margin-top:2px">No plan assigned</div>`}
         </div>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
@@ -767,13 +768,14 @@ VIEWS.coach_athletes = ()=>{
   ${athletes.map(a=>{
     const asgn = a.assignments?.[0];
     const ap = a.athlete_profiles;
+    const fmt = asgn?.plan_templates?.format || ap?.race_format;
     return `<div class="card card-row" onclick="APP.go('coach_athlete_detail',{athleteId:'${a.id}'})" style="cursor:pointer">
       <div class="avatar">${avatarLetters(a.name)}</div>
       <div style="flex:1">
         <div style="font-weight:700">${a.name}</div>
         <div style="font-size:.82rem;color:var(--text2)">${a.email}</div>
         <div style="margin-top:4px;display:flex;gap:4px">
-          ${ap?.race_format?`<span class="tag tag-yellow">${ap.race_format}</span>`:''}
+          ${fmt?`<span class="tag tag-yellow">${fmt}</span>`:''}
           ${ap?.level?`<span class="tag tag-gray">${ap.level}</span>`:''}
           ${asgn?'':'<span class="tag tag-orange">No plan</span>'}
         </div>
@@ -817,6 +819,7 @@ VIEWS.coach_athlete_detail = ()=>{
   if(!ath) return `<div class="page"><p>Athlete not found.</p></div>`;
   const ap = ath.athlete_profiles||{};
   const tpl = asgn?.plan_templates;
+  const fmt = tpl?.format || ap.race_format;
   const week = asgn ? APP.getAthleteWeek(asgn) : 0;
   const completedCount = logs.filter(l=>l.completed).length;
   const avgRpe = logs.filter(l=>l.rpe).length ? (logs.reduce((s,l)=>s+(parseFloat(l.rpe)||0),0)/logs.filter(l=>l.rpe).length).toFixed(1) : '—';
@@ -829,7 +832,7 @@ VIEWS.coach_athlete_detail = ()=>{
       <h1>${ath.name}</h1>
       <div style="color:var(--text2);font-size:.9rem">${ath.email}</div>
       <div style="margin-top:4px;display:flex;gap:6px">
-        ${ap.race_format?`<span class="tag tag-yellow">${ap.race_format}</span>`:''}
+        ${fmt?`<span class="tag tag-yellow">${fmt}</span>`:''}
         ${ap.level?`<span class="tag tag-gray">${ap.level}</span>`:''}
       </div>
     </div>

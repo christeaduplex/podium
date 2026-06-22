@@ -1767,7 +1767,7 @@ const ACTIONS = {
       adjustment_note: adjReq?(document.getElementById('log-adj-note')?.value||''):'',
       completed_at: new Date().toISOString(),
       coach_reviewed: false,
-    },{onConflict:'athlete_id,assignment_id,week,day'});
+    },{onConflict:'athlete_id,week,day'});
     if(error){ showToast('Error saving log.',true); return; }
     showToast('Workout logged ✓');
     const modal = document.getElementById('modal-root');

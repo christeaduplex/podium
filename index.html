@@ -542,7 +542,7 @@ const LOADERS = {
     APP.state.todayWorkout = todayMod||(day ? workouts.find(w=>w.week===week&&w.day===day) : null);
     APP.state.todayMod = !!todayMod;
     APP.state.weekWorkouts = workouts.filter(w=>w.week===week);
-    const {data:weekLogs} = await sb.from('workout_logs').select('*').eq('athlete_id',uid).eq('assignment_id',asgn.id).eq('week',week);
+    const {data:weekLogs} = await sb.from('workout_logs').select('*').eq('athlete_id',uid).eq('week',week);
     APP.state.weekLogs = weekLogs||[];
     APP.state.todayLog = day ? (weekLogs||[]).find(l=>l.day===day)||null : null;
     // partner
@@ -564,7 +564,7 @@ const LOADERS = {
     APP.state.assignment = asgn;
     if(!asgn) return;
     APP.state.currentWeek = APP.getAthleteWeek(asgn);
-    const {data:logs} = await sb.from('workout_logs').select('week,day,completed').eq('athlete_id',uid).eq('assignment_id',asgn.id);
+    const {data:logs} = await sb.from('workout_logs').select('week,day,completed').eq('athlete_id',uid);
     APP.state.logs = logs||[];
   },
 
@@ -580,7 +580,7 @@ const LOADERS = {
     const base = (asgn.plan_templates?.workouts||[]).find(w=>w.week===week&&w.day===day);
     const mod = mods.find(m=>m.week===week&&m.day===day);
     APP.state.workout = mod?{...mod,_coachEdited:true}:base;
-    const {data:log} = await sb.from('workout_logs').select('*').eq('athlete_id',uid).eq('assignment_id',asgn.id).eq('week',week).eq('day',day).maybeSingle();
+    const {data:log} = await sb.from('workout_logs').select('*').eq('athlete_id',uid).eq('week',week).eq('day',day).maybeSingle();
     APP.state.dayLog = log;
   },
 
@@ -1757,7 +1757,6 @@ const ACTIONS = {
     const adjReq = document.getElementById('log-adj-req')?.checked||false;
     const {error} = await sb.from('workout_logs').upsert({
       athlete_id: APP.user.id,
-      assignment_id: asgnId,
       week, day,
       completed: completed==='true',
       rpe: document.getElementById('log-rpe').value||null,
@@ -1768,7 +1767,7 @@ const ACTIONS = {
       completed_at: new Date().toISOString(),
       coach_reviewed: false,
     },{onConflict:'athlete_id,week,day'});
-    if(error){ showToast('Error saving log.',true); return; }
+    if(error){ console.error('logWorkout', error); showToast(`Error saving log: ${error.message}`,true); return; }
     showToast('Workout logged ✓');
     const modal = document.getElementById('modal-root');
     if(modal){ APP.closeModal(); await APP.tab('athlete_today'); }

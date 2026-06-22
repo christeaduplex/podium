@@ -153,10 +153,35 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ============================================================
-// SUPABASE
+// SUPABASE — environment-aware config
+// Only the production domain talks to the production project. Everything
+// else (staging.podiumfit.app + all *.vercel.app preview deploys + local
+// dev) talks to the staging project, so no preview or review build can
+// ever mutate real data or send real emails.
 // ============================================================
-const SUPABASE_URL = 'https://wbxvjimgrmnqcwdqfhbr.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieHZqaW1ncm1ucWN3ZHFmaGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODMwMTUsImV4cCI6MjA5NzE1OTAxNX0.IWdg6MRzTEX4AN_Yw6bx5HSB6-EeRXKYbqDrs0EA2sQ';
+const SUPABASE_ENVS = {
+  production: {
+    url: 'https://wbxvjimgrmnqcwdqfhbr.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieHZqaW1ncm1ucWN3ZHFmaGJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODMwMTUsImV4cCI6MjA5NzE1OTAxNX0.IWdg6MRzTEX4AN_Yw6bx5HSB6-EeRXKYbqDrs0EA2sQ',
+  },
+  staging: {
+    url: 'https://ammvmkakgrobzikgjiaq.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtbXZta2FrZ3JvYnppa2dqaWFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwOTIxNzMsImV4cCI6MjA5NzY2ODE3M30._05DxsOFkUXHXFMUCzsWehZ6tiwsq2ngvcLMgn34KLg',
+  },
+};
+const PROD_HOSTS = ['podiumfit.app', 'www.podiumfit.app'];
+const APP_ENV = PROD_HOSTS.includes(location.hostname) ? 'production' : 'staging';
+const SUPABASE_URL = SUPABASE_ENVS[APP_ENV].url;
+const SUPABASE_ANON_KEY = SUPABASE_ENVS[APP_ENV].anonKey;
+if (APP_ENV !== 'production') {
+  console.info('[podium] running against STAGING backend:', SUPABASE_URL);
+  addEventListener('DOMContentLoaded', () => {
+    const b = document.createElement('div');
+    b.textContent = 'STAGING';
+    b.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:99999;background:#ff6b00;color:#000;font:700 11px/1 system-ui,sans-serif;letter-spacing:.08em;padding:5px 8px;border-radius:6px;opacity:.85;pointer-events:none';
+    document.body.appendChild(b);
+  });
+}
 // Capture hash BEFORE Supabase JS clears it — used to detect invite links
 const INITIAL_HASH = window.location.hash;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

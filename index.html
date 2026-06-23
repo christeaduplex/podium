@@ -494,6 +494,13 @@ const LOADERS = {
     APP.state.phaseIdx = parseInt(phaseIdx)||0;
   },
 
+  async coach_day_detail({templateId,week,day}) {
+    const {data:tpl} = await sb.from('plan_templates').select('*').eq('id',templateId).single();
+    APP.state.template = tpl;
+    APP.state.dWeek = parseInt(week);
+    APP.state.dDay = parseInt(day);
+  },
+
   async coach_edit_plan({templateId,week}) {
     const [{data:tpl},{data:lib}] = await Promise.all([
       sb.from('plan_templates').select('*').eq('id',templateId).single(),
@@ -963,15 +970,35 @@ VIEWS.coach_phase_detail = ()=>{
   <div class="section">
     <div class="section-header"><h2>Week ${wk}</h2></div>
     ${days.length===0?`<div class="card"><p style="color:var(--text2);font-size:.85rem">No workouts added yet.</p></div>`:
-      days.map(w=>`<div class="card">
+      days.map(w=>`<div class="card" style="cursor:pointer" onclick="APP.go('coach_day_detail',{templateId:'${t.id}',week:${w.week},day:${w.day}})">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <span style="font-weight:700;color:var(--text2);font-size:.82rem">Day ${w.day}</span>
           <span class="tag ${typeColor(w.type)}">${w.type}</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="margin-left:auto;color:var(--text3)"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         <div style="font-weight:700;margin-bottom:4px">${w.title}</div>
         ${w.description?`<p style="font-size:.85rem;color:var(--text2);white-space:pre-wrap">${w.description}</p>`:''}
       </div>`).join('')}
   </div>`).join('')}
+</div>`;
+};
+
+VIEWS.coach_day_detail = ()=>{
+  const {template:t, dWeek:week, dDay:day} = APP.state;
+  if(!t) return `<div class="page"><p>Not found.</p></div>`;
+  const w = (t.workouts||[]).find(x=>x.week===week&&x.day===day);
+  return `
+<div class="page">
+  <div class="top-bar">${backBtn()}<div style="font-size:.85rem;color:var(--text2)">Week ${week} · Day ${day}</div><button class="btn btn-ghost btn-sm" onclick="APP.go('coach_edit_plan',{templateId:'${t.id}',week:${week}})">Edit</button></div>
+  ${!w?`<div class="empty" style="padding-top:60px"><div class="empty-icon">📋</div><h3>No workout</h3><p>Nothing scheduled for week ${week}, day ${day}.</p></div>`:`
+  <div style="display:flex;align-items:center;gap:8px;margin:8px 0 10px">
+    <span class="tag ${typeColor(w.type)}">${w.type}</span>
+    ${w.location?`<span class="tag tag-gray">${w.location}</span>`:''}
+  </div>
+  <h1 style="margin-bottom:6px">${w.title}</h1>
+  ${w.description?`<p style="font-size:.9rem;margin-bottom:14px;white-space:pre-wrap">${w.description}</p>`:''}
+  ${(w.exercises||[]).length?`<div class="card" style="padding-top:4px">${(w.exercises||[]).map(ex=>`<div style="padding:8px 0;border-top:1px solid var(--border);font-size:.9rem"><span style="font-weight:600">${ex.name}</span>${ex.detail?` <span style="color:var(--text2)">· ${ex.detail}</span>`:''}${ex.notes?`<div style="font-size:.8rem;color:var(--text3)">${ex.notes}</div>`:''}</div>`).join('')}</div>`:''}
+  `}
 </div>`;
 };
 

@@ -727,6 +727,8 @@ VIEWS.coach_dashboard = ()=>{
   const {athletes=[], templates=[], allLogs=[], checkins=[]} = APP.state;
   const now = new Date();
   const daysSince = d => d ? Math.floor((now-new Date(d))/(1000*60*60*24)) : null;
+  const timeAgo = d => { const s=(now-new Date(d))/1000; if(s<60)return 'now'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d'; };
+  const todayIdx = APP.getTodayDayIndex() || 5; // workouts due so far this week (Sun → whole week done)
 
   // most-recent check-in & most-recent completed log per athlete
   const lastCi={}, lastLog={};
@@ -767,13 +769,26 @@ VIEWS.coach_dashboard = ()=>{
   const attnShown=attn.slice(0,4), attnMore=attn.length-attnShown.length;
   const attnAthletes=new Set(attn.map(i=>i.id)).size;
 
-  // roster adherence (completed vs scheduled, current week)
+  // recent activity feed (completions, skips, check-ins — newest first)
+  const activity=[];
+  allLogs.forEach(l=>{ if(!l.completed_at) return; activity.push({
+    id:l.athlete_id, name:l.profiles?.name, t:new Date(l.completed_at),
+    text:`${l.completed?'completed':'skipped'} Wk ${l.week} · Day ${l.day}`,
+    meta:l.completed&&l.rpe?`RPE ${l.rpe}`:'', kind:l.completed?'done':'skip'}); });
+  checkins.forEach(c=>{ const t=c.created_at||c.date; if(!t) return; activity.push({
+    id:c.athlete_id, name:c.profiles?.name, t:new Date(t), text:'checked in',
+    meta:c.energy?`energy ${c.energy}/10`:'', kind:'checkin'}); });
+  activity.sort((a,b)=>b.t-a.t);
+  const actShown=activity.slice(0,6);
+
+  // roster adherence — count only workouts whose day has arrived this week
   let sched=0, done=0;
   athletes.forEach(a=>{
     const asgn=a.assignments?.[0]; if(!asgn) return;
     const wk=APP.getAthleteWeek(asgn);
-    sched += (tplMap[asgn.template_id]?.workouts||[]).filter(w=>w.week===wk).length;
-    done += allLogs.filter(l=>l.athlete_id===a.id && l.week===wk && l.completed).length;
+    const dueA=(tplMap[asgn.template_id]?.workouts||[]).filter(w=>w.week===wk && w.day<=todayIdx).length;
+    const doneA=allLogs.filter(l=>l.athlete_id===a.id && l.week===wk && l.completed && l.day<=todayIdx).length;
+    sched += dueA; done += Math.min(doneA, dueA);
   });
   const adh = sched ? Math.round(done/sched*100) : null;
 
@@ -815,11 +830,24 @@ VIEWS.coach_dashboard = ()=>{
     <div class="card" style="display:flex;align-items:center;gap:10px"><span class="tag tag-green">All clear</span><span style="font-size:.88rem;color:var(--text2)">Nothing needs your attention right now.</span></div>
   </div>`}
 
+  ${actShown.length?`
+  <div class="section">
+    <div class="section-header"><h2>Recent activity</h2></div>
+    ${actShown.map(i=>`<div class="card card-row" style="cursor:pointer" onclick="APP.go('coach_athlete_detail',{athleteId:'${i.id}'})">
+      <div class="avatar" style="width:32px;height:32px;font-size:.75rem">${avatarLetters(i.name||'?')}</div>
+      <div style="flex:1"><div style="font-weight:600;font-size:.9rem">${i.name||'Athlete'}</div><div style="font-size:.8rem;color:var(--text2)">${i.text}${i.meta?` · ${i.meta}`:''}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:7px;height:7px;border-radius:50%;background:${i.kind==='done'?'var(--success)':i.kind==='skip'?'var(--danger,#FF3B3B)':'var(--text3)'}"></span>
+        <span style="font-size:.78rem;color:var(--text3)">${timeAgo(i.t)}</span>
+      </div>
+    </div>`).join('')}
+  </div>`:''}
+
   ${adh!=null?`
   <div class="section">
     <div class="section-header"><h2>Roster this week</h2></div>
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><span style="font-size:.85rem;color:var(--text2)">Adherence · ${done} of ${sched} workouts</span><span style="font-weight:700">${adh}%</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><span style="font-size:.85rem;color:var(--text2)">Completed · ${done} of ${sched} due this week</span><span style="font-weight:700">${adh}%</span></div>
       <div style="height:6px;background:var(--card2);border-radius:3px;overflow:hidden"><div style="height:100%;width:${adh}%;background:var(--primary);border-radius:3px"></div></div>
     </div>
   </div>`:''}

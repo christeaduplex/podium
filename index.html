@@ -836,7 +836,7 @@ VIEWS.coach_athletes = ()=>{
   const {athletes} = APP.state;
   return `
 <div class="page">
-  <div class="top-bar"><h1>Athletes</h1><div style="display:flex;align-items:center;gap:8px"><button class="btn btn-ghost btn-sm" onclick="APP.go('coach_invite_athlete')">${I.plus} Invite</button>${hamburgerBtn()}</div></div>
+  <div class="top-bar">${APP.history.length>0?backBtn():''}<h1>Athletes</h1><div style="display:flex;align-items:center;gap:8px"><button class="btn btn-ghost btn-sm" onclick="APP.go('coach_invite_athlete')">${I.plus} Invite</button>${hamburgerBtn()}</div></div>
   ${athletes.length===0?`<div class="empty"><div class="empty-icon">👥</div><h3>No athletes yet</h3><p>Invite athletes to get started.</p></div>`:''}
   ${athletes.map(a=>{
     const asgn = a.assignments?.[0];
@@ -977,7 +977,7 @@ VIEWS.coach_plans = ()=>{
   const {templates} = APP.state;
   return `
 <div class="page">
-  <div class="top-bar"><h1>Plans</h1><div style="display:flex;align-items:center;gap:8px"><button class="btn btn-ghost btn-sm" onclick="APP.go('coach_create_plan')">${I.plus} New Plan</button>${hamburgerBtn()}</div></div>
+  <div class="top-bar">${APP.history.length>0?backBtn():''}<h1>Plans</h1><div style="display:flex;align-items:center;gap:8px"><button class="btn btn-ghost btn-sm" onclick="APP.go('coach_create_plan')">${I.plus} New Plan</button>${hamburgerBtn()}</div></div>
   ${templates.length===0?`<div class="empty"><div class="empty-icon">📋</div><h3>No plans yet</h3><p>Create a training plan to assign to athletes.</p></div>`:''}
   ${templates.map(t=>`<div class="card" onclick="APP.go('coach_plan_detail',{templateId:'${t.id}'})" style="cursor:pointer">
     <div style="display:flex;justify-content:space-between;align-items:start">
@@ -1130,7 +1130,7 @@ VIEWS.coach_feedback = ()=>{
   const reviewed = logs.filter(l=>!l.coach_reviewed).slice(0,10);
   return `
 <div class="page">
-  <div class="top-bar"><h1>Feedback</h1>${hamburgerBtn()}</div>
+  <div class="top-bar">${APP.history.length>0?backBtn():''}<h1>Feedback</h1>${hamburgerBtn()}</div>
   ${adjLogs.length>0?`<div class="section">
     <div class="section-header"><h2>Adjustment Requests (${adjLogs.length})</h2></div>
     ${adjLogs.map(l=>`<div class="card" style="border-left:3px solid var(--accent)">
